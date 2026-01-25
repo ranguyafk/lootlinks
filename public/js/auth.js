@@ -10,33 +10,29 @@ let supabaseClient = null;
 function initSupabase() {
   // Get Supabase config from window (set in HTML)
   if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
-    console.error('Supabase configuration not found. Please set SUPABASE_URL and SUPABASE_ANON_KEY.');
-    showConfigError();
+    console.warn('Supabase configuration not found in environment variables.');
     return null;
   }
   
-  if (typeof supabase === 'undefined') {
-    console.error('Supabase library not loaded. Please include the Supabase CDN script.');
-    showConfigError();
+  // Check if Supabase library is loaded
+  if (typeof supabase === 'undefined' || !supabase.createClient) {
+    console.warn('Supabase library not loaded from CDN. This may be due to ad blockers or network restrictions.');
     return null;
   }
   
-  supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-  return supabaseClient;
+  try {
+    supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    return supabaseClient;
+  } catch (error) {
+    console.error('Error initializing Supabase client:', error);
+    return null;
+  }
 }
 
-// Show configuration error to user
+// Show configuration error to user (removed - handled by fallback)
 function showConfigError() {
-  const errorDiv = document.createElement('div');
-  errorDiv.className = 'error-message';
-  errorDiv.style.margin = '20px auto';
-  errorDiv.style.maxWidth = '600px';
-  errorDiv.textContent = 'Supabase authentication is not configured. Please contact the administrator.';
-  
-  const container = document.querySelector('.container main');
-  if (container) {
-    container.insertBefore(errorDiv, container.firstChild);
-  }
+  // Silently handle - app will use fallback authentication
+  console.info('Using fallback authentication mode.');
 }
 
 // Get current Supabase session
@@ -47,14 +43,19 @@ async function getSupabaseSession() {
   
   if (!supabaseClient) return null;
   
-  const { data: { session }, error } = await supabaseClient.auth.getSession();
-  
-  if (error) {
-    console.error('Error getting session:', error);
+  try {
+    const { data: { session }, error } = await supabaseClient.auth.getSession();
+    
+    if (error) {
+      console.error('Error getting session:', error);
+      return null;
+    }
+    
+    return session;
+  } catch (error) {
+    console.error('Exception getting session:', error);
     return null;
   }
-  
-  return session;
 }
 
 // Bind Supabase session to backend
@@ -100,28 +101,59 @@ async function signUpWithEmail(email, password) {
   }
   
   if (!supabaseClient) {
-    return { success: false, error: 'Supabase not initialized' };
+    // Fallback: Use legacy backend authentication
+    console.info('Using legacy backend authentication for signup');
+    return await legacySignUp(email, password);
   }
   
-  const { data, error } = await supabaseClient.auth.signUp({
-    email,
-    password
-  });
-  
-  if (error) {
+  try {
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password
+    });
+    
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    
+    // Bind session to backend
+    if (data.session) {
+      const bindResult = await bindSessionToBackend();
+      if (!bindResult.success) {
+        return { success: false, error: bindResult.error };
+      }
+      return { success: true, user: data.user, session: data.session };
+    }
+    
+    return { success: true, user: data.user, session: data.session };
+  } catch (error) {
+    console.error('Supabase signup error:', error);
+    // Fallback to legacy
+    return await legacySignUp(email, password);
+  }
+}
+
+// Legacy backend signup fallback
+async function legacySignUp(email, password) {
+  try {
+    const response = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Signup failed' };
+    }
+    
+    return { success: true, user: data.user, session: { access_token: 'legacy' } };
+  } catch (error) {
+    console.error('Legacy signup error:', error);
     return { success: false, error: error.message };
   }
-  
-  // Bind session to backend
-  if (data.session) {
-    const bindResult = await bindSessionToBackend();
-    if (!bindResult.success) {
-      return { success: false, error: bindResult.error };
-    }
-    return { success: true, user: data.user, session: data.session };
-  }
-  
-  return { success: true, user: data.user, session: data.session };
 }
 
 // Sign in with email and password
@@ -131,25 +163,56 @@ async function signInWithEmail(email, password) {
   }
   
   if (!supabaseClient) {
-    return { success: false, error: 'Supabase not initialized' };
+    // Fallback: Use legacy backend authentication
+    console.info('Using legacy backend authentication for signin');
+    return await legacySignIn(email, password);
   }
   
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
-  
-  if (error) {
+  try {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    
+    // Bind session to backend
+    const bindResult = await bindSessionToBackend();
+    if (!bindResult.success) {
+      return { success: false, error: bindResult.error };
+    }
+    
+    return { success: true, user: data.user, session: data.session };
+  } catch (error) {
+    console.error('Supabase signin error:', error);
+    // Fallback to legacy
+    return await legacySignIn(email, password);
+  }
+}
+
+// Legacy backend signin fallback
+async function legacySignIn(email, password) {
+  try {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Login failed' };
+    }
+    
+    return { success: true, user: data.user, session: { access_token: 'legacy' } };
+  } catch (error) {
+    console.error('Legacy signin error:', error);
     return { success: false, error: error.message };
   }
-  
-  // Bind session to backend
-  const bindResult = await bindSessionToBackend();
-  if (!bindResult.success) {
-    return { success: false, error: bindResult.error };
-  }
-  
-  return { success: true, user: data.user, session: data.session };
 }
 
 // Sign out
@@ -183,8 +246,20 @@ async function signOut() {
 
 // Check if user is authenticated
 async function isAuthenticated() {
+  // Try Supabase first
   const session = await getSupabaseSession();
-  return session !== null;
+  if (session !== null) return true;
+  
+  // Fallback: check backend session
+  try {
+    const response = await fetch('/api/me', {
+      credentials: 'same-origin'
+    });
+    
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
 }
 
 // Get current user
