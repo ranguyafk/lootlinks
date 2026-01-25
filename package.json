@@ -1,0 +1,24 @@
+{
+  "name": "lootlinks",
+  "version": "1.0.0",
+  "description": "A minimal MVP of a work.ink-style link gate with ad-view requirements",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": [
+    "link-gate",
+    "monetization",
+    "ad-views"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^9.2.2",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "morgan": "^1.10.0",
+    "uuid": "^9.0.1"
+  }
+}
