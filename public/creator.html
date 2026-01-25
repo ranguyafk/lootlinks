@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creator Dashboard - LootLinks</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔗 LootLinks</h1>
+      <nav>
+        <a href="/">Home</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="creator-section">
+        <h2>Create a Gated Link</h2>
+        
+        <form id="createLinkForm" class="creator-form">
+          <div class="form-group">
+            <label for="email">Your Email</label>
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              placeholder="creator@example.com" 
+              required
+            >
+            <small>We'll use this to track your earnings</small>
+          </div>
+
+          <div class="form-group">
+            <label for="dest_url">Destination URL</label>
+            <input 
+              type="url" 
+              id="dest_url" 
+              name="dest_url" 
+              placeholder="https://example.com/your-content" 
+              required
+            >
+            <small>Where visitors will be redirected after viewing sponsors</small>
+          </div>
+
+          <div class="form-group">
+            <label for="ads_required">Required Sponsor Views</label>
+            <select id="ads_required" name="ads_required" required>
+              <option value="1">1 view</option>
+              <option value="2">2 views</option>
+              <option value="3" selected>3 views</option>
+              <option value="4">4 views</option>
+              <option value="5">5 views</option>
+            </select>
+            <small>More views = higher payout, but may reduce conversion</small>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Generate Link</button>
+        </form>
+
+        <div id="linkResult" class="link-result" style="display: none;">
+          <h3>✅ Link Created Successfully!</h3>
+          <div class="generated-link">
+            <input type="text" id="generatedUrl" readonly>
+            <button id="copyBtn" class="btn btn-secondary">Copy</button>
+          </div>
+          <p class="result-info">
+            Share this link with your audience. You'll earn <strong id="potentialEarnings"></strong> for each completed view session.
+          </p>
+        </div>
+
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+      </section>
+
+      <section class="dashboard-section">
+        <h2>Your Dashboard</h2>
+        
+        <div class="dashboard-form">
+          <input 
+            type="email" 
+            id="dashboardEmail" 
+            placeholder="Enter your email to view stats"
+          >
+          <button id="loadDashboard" class="btn btn-secondary">Load Dashboard</button>
+        </div>
+
+        <div id="dashboardContent" style="display: none;">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="totalBalance">$0.00</div>
+              <div class="stat-label">Total Balance</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="totalLinks">0</div>
+              <div class="stat-label">Links Created</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="totalCompletions">0</div>
+              <div class="stat-label">Total Completions</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="totalViews">0</div>
+              <div class="stat-label">Total Ad Views</div>
+            </div>
+          </div>
+
+          <h3>Your Links</h3>
+          <div id="linksList" class="links-list"></div>
+        </div>
+
+        <div id="dashboardError" class="error-message" style="display: none;"></div>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 LootLinks - MVP Demonstration</p>
+    </footer>
+  </div>
+
+  <script>
+    // Create link form handler
+    document.getElementById('createLinkForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = {
+        email: document.getElementById('email').value,
+        dest_url: document.getElementById('dest_url').value,
+        ads_required: parseInt(document.getElementById('ads_required').value)
+      };
+
+      try {
+        const response = await fetch('/api/links', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Show success
+          document.getElementById('linkResult').style.display = 'block';
+          document.getElementById('errorMessage').style.display = 'none';
+          document.getElementById('generatedUrl').value = data.url;
+          
+          // Calculate potential earnings
+          const payout = (0.01 * data.ads_required).toFixed(2);
+          document.getElementById('potentialEarnings').textContent = `$${payout}`;
+          
+          // Scroll to result
+          document.getElementById('linkResult').scrollIntoView({ behavior: 'smooth' });
+        } else {
+          // Show error
+          document.getElementById('errorMessage').textContent = data.error || 'Failed to create link';
+          document.getElementById('errorMessage').style.display = 'block';
+          document.getElementById('linkResult').style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('errorMessage').textContent = 'Network error. Please try again.';
+        document.getElementById('errorMessage').style.display = 'block';
+      }
+    });
+
+    // Copy button handler
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      const input = document.getElementById('generatedUrl');
+      input.select();
+      document.execCommand('copy');
+      
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+      }, 2000);
+    });
+
+    // Dashboard loader
+    document.getElementById('loadDashboard').addEventListener('click', async () => {
+      const email = document.getElementById('dashboardEmail').value;
+      
+      if (!email) {
+        document.getElementById('dashboardError').textContent = 'Please enter an email';
+        document.getElementById('dashboardError').style.display = 'block';
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/creator/summary?email=${encodeURIComponent(email)}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          document.getElementById('dashboardContent').style.display = 'block';
+          document.getElementById('dashboardError').style.display = 'none';
+          
+          // Update stats
+          document.getElementById('totalBalance').textContent = `$${data.creator.balance.toFixed(2)}`;
+          document.getElementById('totalLinks').textContent = data.links.length;
+          document.getElementById('totalCompletions').textContent = data.stats.total_completions;
+          document.getElementById('totalViews').textContent = data.stats.total_ad_views || 0;
+          
+          // Display links
+          const linksList = document.getElementById('linksList');
+          if (data.links.length === 0) {
+            linksList.innerHTML = '<p class="empty-state">No links created yet. Create your first link above!</p>';
+          } else {
+            linksList.innerHTML = data.links.map(link => `
+              <div class="link-item">
+                <div class="link-info">
+                  <div class="link-slug">/l/${link.slug}</div>
+                  <div class="link-dest">${link.dest_url}</div>
+                  <div class="link-meta">${link.ads_required} ads required • Created ${new Date(link.created_at).toLocaleDateString()}</div>
+                </div>
+                <button class="btn btn-small" onclick="copyLinkUrl('${link.slug}')">Copy Link</button>
+              </div>
+            `).join('');
+          }
+        } else {
+          document.getElementById('dashboardError').textContent = data.error || 'Creator not found';
+          document.getElementById('dashboardError').style.display = 'block';
+          document.getElementById('dashboardContent').style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('dashboardError').textContent = 'Network error. Please try again.';
+        document.getElementById('dashboardError').style.display = 'block';
+      }
+    });
+
+    // Copy link URL helper
+    function copyLinkUrl(slug) {
+      const url = `${window.location.origin}/l/${slug}`;
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Link copied to clipboard!');
+      });
+    }
+  </script>
+</body>
+</html>
