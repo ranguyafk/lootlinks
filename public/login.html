@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - LootLinks</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Set Supabase config from environment
+    // In production, these would be set via server-side rendering or API call
+    // For now, they need to be set in .env and passed to frontend
+    window.SUPABASE_URL = '{{SUPABASE_URL}}';
+    window.SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔗 LootLinks</h1>
+      <p class="tagline">Monetize your links with sponsor views</p>
+      <nav style="margin-top: 20px;">
+        <a href="/index.html">Home</a>
+        <a href="/signup.html">Sign Up</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="creator-section">
+        <h2>Login to Your Account</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 40px;">
+          Welcome back! Sign in to access your creator dashboard.
+        </p>
+
+        <form id="loginForm" class="creator-form">
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              placeholder="you@example.com" 
+              required
+              autocomplete="email"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              placeholder="Enter your password" 
+              required
+              autocomplete="current-password"
+            >
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%;" id="loginBtn">
+            Login
+          </button>
+        </form>
+
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+        
+        <p style="text-align: center; margin-top: 30px; color: var(--text-secondary);">
+          Don't have an account? 
+          <a href="/signup.html" style="color: var(--primary-color); text-decoration: none;">Sign up here</a>
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 LootLinks - MVP Demonstration</p>
+    </footer>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    // Initialize Supabase on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Check if already logged in
+      const authenticated = await isAuthenticated();
+      if (authenticated) {
+        // Bind session to backend
+        const bindResult = await bindSessionToBackend();
+        if (bindResult.success) {
+          window.location.href = '/creator.html';
+          return;
+        }
+      }
+      
+      // Handle login form submission
+      const loginForm = document.getElementById('loginForm');
+      const errorMessage = document.getElementById('errorMessage');
+      const loginBtn = document.getElementById('loginBtn');
+      
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Clear previous errors
+        errorMessage.style.display = 'none';
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Logging in...';
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
+        try {
+          const result = await signInWithEmail(email, password);
+          
+          if (result.success) {
+            // Redirect to creator dashboard
+            window.location.href = '/creator.html';
+          } else {
+            errorMessage.textContent = result.error || 'Login failed. Please try again.';
+            errorMessage.style.display = 'block';
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Login';
+          }
+        } catch (error) {
+          console.error('Login error:', error);
+          errorMessage.textContent = 'An unexpected error occurred. Please try again.';
+          errorMessage.style.display = 'block';
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Login';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

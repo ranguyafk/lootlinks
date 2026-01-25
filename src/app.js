@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
+const { createRemoteJWKSet, jwtVerify } = require('jose');
 const {
   initializeDatabase,
   createOrGetCreator,
@@ -22,6 +23,8 @@ const {
   setSessionUser,
   getSessionUser,
   clearSessionUser,
+  getCreatorBySupabaseId,
+  createOrUpdateCreatorBySupabaseId,
   getLinksByUserId,
   updateLink,
   deleteLink
@@ -32,9 +35,18 @@ const PAYOUT_PER_AD_VIEW = parseFloat(process.env.PAYOUT_PER_AD_VIEW) || 0.01;
 const AD_VIEW_SECONDS = parseInt(process.env.AD_VIEW_SECONDS) || 5;
 const MAX_ADS_PER_LINK = parseInt(process.env.MAX_ADS_PER_LINK) || 5;
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'sid';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 // Initialize database
 initializeDatabase();
+
+// Supabase JWKS setup for JWT verification
+let JWKS = null;
+if (SUPABASE_URL) {
+  const JWKS_URL = `${SUPABASE_URL}/auth/v1/.well-known/jwks.json`;
+  JWKS = createRemoteJWKSet(new URL(JWKS_URL));
+}
 
 // Middleware
 app.use(morgan('dev'));
@@ -72,11 +84,90 @@ app.use((req, res, next) => {
 // Static files
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+// Middleware to inject Supabase config into HTML files
+app.use((req, res, next) => {
+  const originalSend = res.sendFile;
+  
+  res.sendFile = function(filePath, options, callback) {
+    // Only process HTML files
+    if (filePath && filePath.endsWith('.html')) {
+      const fs = require('fs');
+      
+      fs.readFile(filePath, 'utf8', (err, content) => {
+        if (err) {
+          return originalSend.call(this, filePath, options, callback);
+        }
+        
+        // Replace placeholders with actual values
+        let modifiedContent = content
+          .replace(/\{\{SUPABASE_URL\}\}/g, SUPABASE_URL || '')
+          .replace(/\{\{SUPABASE_ANON_KEY\}\}/g, SUPABASE_ANON_KEY || '');
+        
+        res.setHeader('Content-Type', 'text/html');
+        res.send(modifiedContent);
+      });
+    } else {
+      originalSend.call(this, filePath, options, callback);
+    }
+  };
+  
+  next();
+});
+
 // ============================================================================
 // Authentication API Routes
 // ============================================================================
 
-// POST /api/auth/signup - Create new account
+// POST /api/auth/session - Bind Supabase JWT to backend session
+app.post('/api/auth/session', async (req, res) => {
+  try {
+    // Get Authorization header
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+    }
+    
+    const token = authHeader.substring(7);
+    
+    if (!JWKS) {
+      return res.status(500).json({ error: 'Supabase JWT verification not configured' });
+    }
+    
+    // Verify JWT
+    const { payload } = await jwtVerify(token, JWKS, {
+      issuer: `${SUPABASE_URL}/auth/v1`
+    });
+    
+    // Extract user info from JWT
+    const supabaseUserId = payload.sub;
+    const email = payload.email;
+    
+    if (!supabaseUserId || !email) {
+      return res.status(400).json({ error: 'Invalid token payload' });
+    }
+    
+    // Create or update creator in database
+    const creator = createOrUpdateCreatorBySupabaseId(supabaseUserId, email);
+    
+    // Bind to session
+    setSessionUser(req.sessionId, creator.id);
+    
+    res.json({
+      success: true,
+      user: {
+        id: creator.id,
+        email: creator.email,
+        balance: creator.balance
+      }
+    });
+  } catch (error) {
+    console.error('Session binding error:', error);
+    res.status(401).json({ error: 'Invalid or expired token' });
+  }
+});
+
+// POST /api/auth/signup - Create new account (legacy - kept for compatibility)
 app.post('/api/auth/signup', (req, res) => {
   try {
     const { email, password } = req.body;
@@ -165,7 +256,22 @@ app.post('/api/auth/logout', (req, res) => {
   }
 });
 
-// GET /api/auth/me - Get current user
+// GET /api/me - Get current user (works with both legacy and Supabase auth)
+app.get('/api/me', (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  res.json({
+    user: {
+      id: req.user.id,
+      email: req.user.email,
+      balance: req.user.balance
+    }
+  });
+});
+
+// GET /api/auth/me - Legacy endpoint (redirects to /api/me)
 app.get('/api/auth/me', (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Not authenticated' });
@@ -484,9 +590,26 @@ app.get('/l/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'gate.html'));
 });
 
-// Serve creator page at /creator
+// Serve creator page at /creator (legacy route for backward compatibility)
 app.get('/creator', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'creator.html'));
+});
+
+// Serve HTML pages with .html extension (primary routes)
+app.get('/creator.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'creator.html'));
+});
+
+app.get('/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
+});
+
+app.get('/signup.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'signup.html'));
+});
+
+app.get('/index.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 // Health check
