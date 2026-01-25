@@ -11,16 +11,32 @@ function initSupabase() {
   // Get Supabase config from window (set in HTML)
   if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
     console.error('Supabase configuration not found. Please set SUPABASE_URL and SUPABASE_ANON_KEY.');
+    showConfigError();
     return null;
   }
   
   if (typeof supabase === 'undefined') {
     console.error('Supabase library not loaded. Please include the Supabase CDN script.');
+    showConfigError();
     return null;
   }
   
   supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
   return supabaseClient;
+}
+
+// Show configuration error to user
+function showConfigError() {
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'error-message';
+  errorDiv.style.margin = '20px auto';
+  errorDiv.style.maxWidth = '600px';
+  errorDiv.textContent = 'Supabase authentication is not configured. Please contact the administrator.';
+  
+  const container = document.querySelector('.container main');
+  if (container) {
+    container.insertBefore(errorDiv, container.firstChild);
+  }
 }
 
 // Get current Supabase session

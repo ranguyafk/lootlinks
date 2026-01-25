@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
+const fs = require('fs');
 const { createRemoteJWKSet, jwtVerify } = require('jose');
 const {
   initializeDatabase,
@@ -35,8 +36,13 @@ const PAYOUT_PER_AD_VIEW = parseFloat(process.env.PAYOUT_PER_AD_VIEW) || 0.01;
 const AD_VIEW_SECONDS = parseInt(process.env.AD_VIEW_SECONDS) || 5;
 const MAX_ADS_PER_LINK = parseInt(process.env.MAX_ADS_PER_LINK) || 5;
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'sid';
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+
+// Warn if Supabase is not configured
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.warn('WARNING: Supabase configuration not found. Set SUPABASE_URL and SUPABASE_ANON_KEY in .env for Supabase auth to work.');
+}
 
 // Initialize database
 initializeDatabase();
@@ -44,8 +50,12 @@ initializeDatabase();
 // Supabase JWKS setup for JWT verification
 let JWKS = null;
 if (SUPABASE_URL) {
-  const JWKS_URL = `${SUPABASE_URL}/auth/v1/.well-known/jwks.json`;
-  JWKS = createRemoteJWKSet(new URL(JWKS_URL));
+  try {
+    const JWKS_URL = `${SUPABASE_URL}/auth/v1/.well-known/jwks.json`;
+    JWKS = createRemoteJWKSet(new URL(JWKS_URL));
+  } catch (error) {
+    console.error('Failed to initialize Supabase JWKS:', error);
+  }
 }
 
 // Middleware
@@ -91,8 +101,6 @@ app.use((req, res, next) => {
   res.sendFile = function(filePath, options, callback) {
     // Only process HTML files
     if (filePath && filePath.endsWith('.html')) {
-      const fs = require('fs');
-      
       fs.readFile(filePath, 'utf8', (err, content) => {
         if (err) {
           return originalSend.call(this, filePath, options, callback);
@@ -100,8 +108,8 @@ app.use((req, res, next) => {
         
         // Replace placeholders with actual values
         let modifiedContent = content
-          .replace(/\{\{SUPABASE_URL\}\}/g, SUPABASE_URL || '')
-          .replace(/\{\{SUPABASE_ANON_KEY\}\}/g, SUPABASE_ANON_KEY || '');
+          .replace(/\{\{SUPABASE_URL\}\}/g, SUPABASE_URL)
+          .replace(/\{\{SUPABASE_ANON_KEY\}\}/g, SUPABASE_ANON_KEY);
         
         res.setHeader('Content-Type', 'text/html');
         res.send(modifiedContent);
