@@ -181,7 +181,7 @@ function getCompletedAdCount(linkId, sessionId) {
 }
 
 function hasCompletedAllAds(linkId, sessionId) {
-  const link = getLinkBySlug(null, linkId);
+  const link = getLinkById(linkId);
   if (!link) return false;
   
   const completedCount = getCompletedAdCount(linkId, sessionId);
