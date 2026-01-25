@@ -10,7 +10,7 @@ async function checkAuth() {
     // Hide loading, show dashboard section initially
     document.getElementById('loadingSection').style.display = 'none';
     
-    // Check Supabase session
+    // Check if authenticated (tries Supabase first, then backend)
     const authenticated = await isAuthenticated();
     
     if (!authenticated) {
@@ -19,13 +19,15 @@ async function checkAuth() {
       return;
     }
     
-    // Bind session to backend
-    const bindResult = await bindSessionToBackend();
-    
-    if (!bindResult.success) {
-      console.error('Session binding failed:', bindResult.error);
-      window.location.href = '/login.html';
-      return;
+    // If using Supabase, bind session to backend
+    const session = await getSupabaseSession();
+    if (session) {
+      const bindResult = await bindSessionToBackend();
+      
+      if (!bindResult.success) {
+        console.error('Session binding failed:', bindResult.error);
+        // Continue anyway - backend session might still be valid
+      }
     }
     
     // Fetch user data from backend
