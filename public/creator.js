@@ -7,60 +7,70 @@ let editingSlug = null;
 // Check authentication status on load
 async function checkAuth() {
   try {
-    const response = await fetch('/api/auth/me');
+    // Hide loading, show dashboard section initially
+    document.getElementById('loadingSection').style.display = 'none';
+    
+    // Check Supabase session
+    const authenticated = await isAuthenticated();
+    
+    if (!authenticated) {
+      // Redirect to login
+      window.location.href = '/login.html';
+      return;
+    }
+    
+    // Bind session to backend
+    const bindResult = await bindSessionToBackend();
+    
+    if (!bindResult.success) {
+      console.error('Session binding failed:', bindResult.error);
+      window.location.href = '/login.html';
+      return;
+    }
+    
+    // Fetch user data from backend
+    const response = await fetch('/api/me', {
+      credentials: 'same-origin'
+    });
+    
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('Server returned non-JSON response');
+      window.location.href = '/login.html';
+      return;
+    }
+    
     if (response.ok) {
       const data = await response.json();
       currentUser = data.user;
       showDashboard();
       loadLinks();
     } else {
-      showAuth();
+      window.location.href = '/login.html';
     }
   } catch (error) {
     console.error('Auth check error:', error);
-    showAuth();
+    window.location.href = '/login.html';
   }
-}
-
-// Show authentication section
-function showAuth() {
-  document.getElementById('authSection').style.display = 'block';
-  document.getElementById('dashboardSection').style.display = 'none';
-  document.getElementById('userNav').style.display = 'none';
-  // Show login by default
-  showLogin();
 }
 
 // Show dashboard section
 function showDashboard() {
-  document.getElementById('authSection').style.display = 'none';
+  document.getElementById('loadingSection').style.display = 'none';
+  document.getElementById('notAuthSection').style.display = 'none';
   document.getElementById('dashboardSection').style.display = 'block';
   document.getElementById('userNav').style.display = 'inline';
+  document.getElementById('guestNav').style.display = 'none';
   document.getElementById('userEmail').textContent = currentUser.email;
   document.getElementById('totalBalance').textContent = `$${currentUser.balance.toFixed(2)}`;
 }
 
-// Toggle between login and signup forms
-function showLogin() {
-  document.getElementById('loginForm').style.display = 'block';
-  document.getElementById('signupForm').style.display = 'none';
-  document.getElementById('showLoginBtn').className = 'btn btn-primary';
-  document.getElementById('showSignupBtn').className = 'btn btn-secondary';
-}
-
-function showSignup() {
-  document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('signupForm').style.display = 'block';
-  document.getElementById('showLoginBtn').className = 'btn btn-secondary';
-  document.getElementById('showSignupBtn').className = 'btn btn-primary';
-}
-
-document.getElementById('showLoginBtn').addEventListener('click', showLogin);
-document.getElementById('showSignupBtn').addEventListener('click', showSignup);
-
 // Helper function to safely parse JSON
 async function safeFetch(url, options = {}) {
   try {
+    // Always include credentials for same-origin requests
+    options.credentials = 'same-origin';
+    
     const response = await fetch(url, options);
     const contentType = response.headers.get('content-type');
     
@@ -78,85 +88,20 @@ async function safeFetch(url, options = {}) {
   }
 }
 
-// Login form handler
-document.getElementById('loginFormElement').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
-
-  try {
-    const result = await safeFetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-
-    if (result.ok) {
-      currentUser = result.data.user;
-      showDashboard();
-      loadLinks();
-    } else {
-      document.getElementById('loginError').textContent = result.data.error || 'Login failed';
-      document.getElementById('loginError').style.display = 'block';
-    }
-  } catch (error) {
-    console.error('Login error:', error);
-    document.getElementById('loginError').textContent = error.message;
-    document.getElementById('loginError').style.display = 'block';
-  }
-});
-
-// Signup form handler
-document.getElementById('signupFormElement').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const email = document.getElementById('signupEmail').value;
-  const password = document.getElementById('signupPassword').value;
-  const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
-
-  // Validate passwords match
-  if (password !== passwordConfirm) {
-    document.getElementById('signupError').textContent = 'Passwords do not match';
-    document.getElementById('signupError').style.display = 'block';
-    return;
-  }
-
-  try {
-    const result = await safeFetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-
-    if (result.ok) {
-      currentUser = result.data.user;
-      showDashboard();
-      loadLinks();
-    } else {
-      document.getElementById('signupError').textContent = result.data.error || 'Signup failed';
-      document.getElementById('signupError').style.display = 'block';
-    }
-  } catch (error) {
-    console.error('Signup error:', error);
-    document.getElementById('signupError').textContent = error.message;
-    document.getElementById('signupError').style.display = 'block';
-  }
-});
-
 // Logout handler
 document.getElementById('logoutBtn').addEventListener('click', async (e) => {
   e.preventDefault();
   
   try {
-    await safeFetch('/api/auth/logout', { method: 'POST' });
+    // Sign out from Supabase
+    await signOut();
   } catch (error) {
     console.error('Logout error:', error);
   }
   
   currentUser = null;
   currentLinks = [];
-  showAuth();
+  window.location.href = '/index.html';
 });
 
 // Create link form handler

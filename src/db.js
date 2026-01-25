@@ -16,6 +16,7 @@ function initializeDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT,
+      supabase_user_id TEXT UNIQUE,
       balance REAL DEFAULT 0.0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -150,6 +151,31 @@ function getSessionUser(sessionId) {
 
 function clearSessionUser(sessionId) {
   db.prepare('UPDATE sessions SET user_id = NULL WHERE session_id = ?').run(sessionId);
+}
+
+// Supabase user functions
+
+function getCreatorBySupabaseId(supabaseUserId) {
+  return db.prepare('SELECT id, email, supabase_user_id, balance, created_at FROM creators WHERE supabase_user_id = ?').get(supabaseUserId);
+}
+
+function createOrUpdateCreatorBySupabaseId(supabaseUserId, email) {
+  // Check if creator exists
+  const existing = getCreatorBySupabaseId(supabaseUserId);
+  if (existing) {
+    // Update email if changed
+    if (existing.email !== email) {
+      db.prepare('UPDATE creators SET email = ? WHERE supabase_user_id = ?').run(email, supabaseUserId);
+    }
+    return getCreatorBySupabaseId(supabaseUserId);
+  }
+  
+  // Create new creator
+  const result = db.prepare(
+    'INSERT INTO creators (email, supabase_user_id) VALUES (?, ?)'
+  ).run(email, supabaseUserId);
+  
+  return db.prepare('SELECT id, email, supabase_user_id, balance, created_at FROM creators WHERE id = ?').get(result.lastInsertRowid);
 }
 
 function startAdView(linkId, adIndex, sessionId) {
@@ -327,6 +353,9 @@ module.exports = {
   setSessionUser,
   getSessionUser,
   clearSessionUser,
+  // Supabase functions
+  getCreatorBySupabaseId,
+  createOrUpdateCreatorBySupabaseId,
   // CRUD functions
   getLinksByUserId,
   updateLink,

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - LootLinks</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Set Supabase config from environment
+    window.SUPABASE_URL = '{{SUPABASE_URL}}';
+    window.SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔗 LootLinks</h1>
+      <p class="tagline">Monetize your links with sponsor views</p>
+      <nav style="margin-top: 20px;">
+        <a href="/index.html">Home</a>
+        <a href="/login.html">Login</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="creator-section">
+        <h2>Create Your Account</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 40px;">
+          Join LootLinks and start monetizing your links today!
+        </p>
+
+        <form id="signupForm" class="creator-form">
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              placeholder="you@example.com" 
+              required
+              autocomplete="email"
+            >
+            <small>We'll send you a confirmation email</small>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              placeholder="At least 6 characters" 
+              required
+              minlength="6"
+              autocomplete="new-password"
+            >
+            <small>Must be at least 6 characters long</small>
+          </div>
+
+          <div class="form-group">
+            <label for="passwordConfirm">Confirm Password</label>
+            <input 
+              type="password" 
+              id="passwordConfirm" 
+              name="passwordConfirm" 
+              placeholder="Re-enter your password" 
+              required
+              minlength="6"
+              autocomplete="new-password"
+            >
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%;" id="signupBtn">
+            Create Account
+          </button>
+        </form>
+
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+        <div id="successMessage" class="success-message" style="display: none;"></div>
+        
+        <p style="text-align: center; margin-top: 30px; color: var(--text-secondary);">
+          Already have an account? 
+          <a href="/login.html" style="color: var(--primary-color); text-decoration: none;">Login here</a>
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 LootLinks - MVP Demonstration</p>
+    </footer>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    // Initialize Supabase on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Check if already logged in
+      const authenticated = await isAuthenticated();
+      if (authenticated) {
+        // Bind session to backend
+        const bindResult = await bindSessionToBackend();
+        if (bindResult.success) {
+          window.location.href = '/creator.html';
+          return;
+        }
+      }
+      
+      // Handle signup form submission
+      const signupForm = document.getElementById('signupForm');
+      const errorMessage = document.getElementById('errorMessage');
+      const successMessage = document.getElementById('successMessage');
+      const signupBtn = document.getElementById('signupBtn');
+      
+      signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Clear previous messages
+        errorMessage.style.display = 'none';
+        successMessage.style.display = 'none';
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const passwordConfirm = document.getElementById('passwordConfirm').value;
+        
+        // Validate passwords match
+        if (password !== passwordConfirm) {
+          errorMessage.textContent = 'Passwords do not match';
+          errorMessage.style.display = 'block';
+          return;
+        }
+        
+        // Validate password length
+        if (password.length < 6) {
+          errorMessage.textContent = 'Password must be at least 6 characters';
+          errorMessage.style.display = 'block';
+          return;
+        }
+        
+        signupBtn.disabled = true;
+        signupBtn.textContent = 'Creating account...';
+        
+        try {
+          const result = await signUpWithEmail(email, password);
+          
+          if (result.success) {
+            // Check if email confirmation is required
+            if (result.session) {
+              // User is logged in, redirect to dashboard
+              window.location.href = '/creator.html';
+            } else {
+              // Email confirmation required
+              successMessage.textContent = 'Account created! Please check your email to confirm your account, then login.';
+              successMessage.style.display = 'block';
+              signupForm.reset();
+              signupBtn.disabled = false;
+              signupBtn.textContent = 'Create Account';
+            }
+          } else {
+            errorMessage.textContent = result.error || 'Signup failed. Please try again.';
+            errorMessage.style.display = 'block';
+            signupBtn.disabled = false;
+            signupBtn.textContent = 'Create Account';
+          }
+        } catch (error) {
+          console.error('Signup error:', error);
+          errorMessage.textContent = 'An unexpected error occurred. Please try again.';
+          errorMessage.style.display = 'block';
+          signupBtn.disabled = false;
+          signupBtn.textContent = 'Create Account';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
