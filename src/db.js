@@ -1,4 +1,5 @@
 const Database = require('better-sqlite3');
+const bcrypt = require('bcryptjs');
 const path = require('path');
 
 // Initialize SQLite database
@@ -14,6 +15,7 @@ function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS creators (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT UNIQUE NOT NULL,
+      password_hash TEXT,
       balance REAL DEFAULT 0.0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -36,7 +38,9 @@ function initializeDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS sessions (
       session_id TEXT PRIMARY KEY,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      user_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES creators(id)
     )
   `);
 
@@ -94,6 +98,58 @@ function getLinkBySlug(slug) {
 
 function createSession(sessionId) {
   db.prepare('INSERT OR IGNORE INTO sessions (session_id) VALUES (?)').run(sessionId);
+}
+
+// Authentication functions
+
+function createUser(email, password) {
+  // Hash password
+  const passwordHash = bcrypt.hashSync(password, 10);
+  
+  // Create user
+  const result = db.prepare(
+    'INSERT INTO creators (email, password_hash) VALUES (?, ?)'
+  ).run(email, passwordHash);
+  
+  return db.prepare('SELECT id, email, balance, created_at FROM creators WHERE id = ?').get(result.lastInsertRowid);
+}
+
+function authenticateUser(email, password) {
+  const user = db.prepare('SELECT * FROM creators WHERE email = ?').get(email);
+  
+  if (!user || !user.password_hash) {
+    return null;
+  }
+  
+  const isValid = bcrypt.compareSync(password, user.password_hash);
+  if (!isValid) {
+    return null;
+  }
+  
+  // Return user without password_hash
+  const { password_hash, ...userWithoutPassword } = user;
+  return userWithoutPassword;
+}
+
+function getUserById(userId) {
+  const user = db.prepare('SELECT id, email, balance, created_at FROM creators WHERE id = ?').get(userId);
+  return user;
+}
+
+function setSessionUser(sessionId, userId) {
+  db.prepare('UPDATE sessions SET user_id = ? WHERE session_id = ?').run(userId, sessionId);
+}
+
+function getSessionUser(sessionId) {
+  const session = db.prepare('SELECT user_id FROM sessions WHERE session_id = ?').get(sessionId);
+  if (!session || !session.user_id) {
+    return null;
+  }
+  return getUserById(session.user_id);
+}
+
+function clearSessionUser(sessionId) {
+  db.prepare('UPDATE sessions SET user_id = NULL WHERE session_id = ?').run(sessionId);
 }
 
 function startAdView(linkId, adIndex, sessionId) {
@@ -197,6 +253,60 @@ function getCreatorSummary(email) {
   };
 }
 
+// CRUD functions for authenticated link management
+
+function getLinksByUserId(userId) {
+  return db.prepare(
+    'SELECT id, slug, dest_url, ads_required, created_at FROM links WHERE creator_id = ?'
+  ).all(userId);
+}
+
+function updateLink(slug, userId, updates) {
+  // First verify ownership
+  const link = db.prepare('SELECT * FROM links WHERE slug = ?').get(slug);
+  if (!link || link.creator_id !== userId) {
+    return null;
+  }
+  
+  const allowedFields = ['dest_url', 'ads_required'];
+  const updateFields = [];
+  const values = [];
+  
+  for (const [key, value] of Object.entries(updates)) {
+    if (allowedFields.includes(key)) {
+      updateFields.push(`${key} = ?`);
+      values.push(value);
+    }
+  }
+  
+  if (updateFields.length === 0) {
+    return link;
+  }
+  
+  values.push(slug);
+  
+  db.prepare(
+    `UPDATE links SET ${updateFields.join(', ')} WHERE slug = ?`
+  ).run(...values);
+  
+  return db.prepare('SELECT * FROM links WHERE slug = ?').get(slug);
+}
+
+function deleteLink(slug, userId) {
+  // First verify ownership
+  const link = db.prepare('SELECT * FROM links WHERE slug = ?').get(slug);
+  if (!link || link.creator_id !== userId) {
+    return false;
+  }
+  
+  // Delete related data first (due to foreign keys)
+  db.prepare('DELETE FROM impressions WHERE link_id = ?').run(link.id);
+  db.prepare('DELETE FROM completions WHERE link_id = ?').run(link.id);
+  db.prepare('DELETE FROM links WHERE id = ?').run(link.id);
+  
+  return true;
+}
+
 module.exports = {
   db,
   initializeDatabase,
@@ -209,5 +319,16 @@ module.exports = {
   getCompletedAdCount,
   hasCompletedAllAds,
   recordCompletion,
-  getCreatorSummary
+  getCreatorSummary,
+  // Auth functions
+  createUser,
+  authenticateUser,
+  getUserById,
+  setSessionUser,
+  getSessionUser,
+  clearSessionUser,
+  // CRUD functions
+  getLinksByUserId,
+  updateLink,
+  deleteLink
 };

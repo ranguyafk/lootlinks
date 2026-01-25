@@ -12,105 +12,175 @@
       <h1>🔗 LootLinks</h1>
       <nav>
         <a href="/">Home</a>
+        <span id="userNav" style="display: none;">
+          | <span id="userEmail"></span>
+          | <a href="#" id="logoutBtn">Logout</a>
+        </span>
       </nav>
     </header>
 
     <main>
-      <section class="creator-section">
-        <h2>Create a Gated Link</h2>
-        
-        <form id="createLinkForm" class="creator-form">
-          <div class="form-group">
-            <label for="email">Your Email</label>
-            <input 
-              type="email" 
-              id="email" 
-              name="email" 
-              placeholder="creator@example.com" 
-              required
-            >
-            <small>We'll use this to track your earnings</small>
-          </div>
-
-          <div class="form-group">
-            <label for="dest_url">Destination URL</label>
-            <input 
-              type="url" 
-              id="dest_url" 
-              name="dest_url" 
-              placeholder="https://example.com/your-content" 
-              required
-            >
-            <small>Where visitors will be redirected after viewing sponsors</small>
-          </div>
-
-          <div class="form-group">
-            <label for="ads_required">Required Sponsor Views</label>
-            <select id="ads_required" name="ads_required" required>
-              <option value="1">1 view</option>
-              <option value="2">2 views</option>
-              <option value="3" selected>3 views</option>
-              <option value="4">4 views</option>
-              <option value="5">5 views</option>
-            </select>
-            <small>More views = higher payout, but may reduce conversion</small>
-          </div>
-
-          <button type="submit" class="btn btn-primary">Generate Link</button>
-        </form>
-
-        <div id="linkResult" class="link-result" style="display: none;">
-          <h3>✅ Link Created Successfully!</h3>
-          <div class="generated-link">
-            <input type="text" id="generatedUrl" readonly>
-            <button id="copyBtn" class="btn btn-secondary">Copy</button>
-          </div>
-          <p class="result-info">
-            Share this link with your audience. You'll earn <strong id="potentialEarnings"></strong> for each completed view session.
+      <!-- Authentication Section (shown when not logged in) -->
+      <div id="authSection" style="display: none;">
+        <section class="creator-section">
+          <h2>Welcome to Creator Dashboard</h2>
+          <p style="text-align: center; color: var(--text-secondary); margin-bottom: 40px;">
+            Sign in to manage your links or create a new account to get started.
           </p>
-        </div>
 
-        <div id="errorMessage" class="error-message" style="display: none;"></div>
-      </section>
-
-      <section class="dashboard-section">
-        <h2>Your Dashboard</h2>
-        
-        <div class="dashboard-form">
-          <input 
-            type="email" 
-            id="dashboardEmail" 
-            placeholder="Enter your email to view stats"
-          >
-          <button id="loadDashboard" class="btn btn-secondary">Load Dashboard</button>
-        </div>
-
-        <div id="dashboardContent" style="display: none;">
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-value" id="totalBalance">$0.00</div>
-              <div class="stat-label">Total Balance</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value" id="totalLinks">0</div>
-              <div class="stat-label">Links Created</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value" id="totalCompletions">0</div>
-              <div class="stat-label">Total Completions</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value" id="totalViews">0</div>
-              <div class="stat-label">Total Ad Views</div>
-            </div>
+          <div class="auth-toggle" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 30px;">
+            <button id="showLoginBtn" class="btn btn-primary">Login</button>
+            <button id="showSignupBtn" class="btn btn-secondary">Sign Up</button>
           </div>
 
-          <h3>Your Links</h3>
-          <div id="linksList" class="links-list"></div>
-        </div>
+          <!-- Login Form -->
+          <div id="loginForm" class="creator-form" style="display: none;">
+            <h3 style="margin-bottom: 20px;">Login to Your Account</h3>
+            <form id="loginFormElement">
+              <div class="form-group">
+                <label for="loginEmail">Email</label>
+                <input 
+                  type="email" 
+                  id="loginEmail" 
+                  name="email" 
+                  placeholder="you@example.com" 
+                  required
+                >
+              </div>
 
-        <div id="dashboardError" class="error-message" style="display: none;"></div>
-      </section>
+              <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input 
+                  type="password" 
+                  id="loginPassword" 
+                  name="password" 
+                  placeholder="Enter your password" 
+                  required
+                >
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+            </form>
+            <div id="loginError" class="error-message" style="display: none;"></div>
+          </div>
+
+          <!-- Signup Form -->
+          <div id="signupForm" class="creator-form" style="display: none;">
+            <h3 style="margin-bottom: 20px;">Create New Account</h3>
+            <form id="signupFormElement">
+              <div class="form-group">
+                <label for="signupEmail">Email</label>
+                <input 
+                  type="email" 
+                  id="signupEmail" 
+                  name="email" 
+                  placeholder="you@example.com" 
+                  required
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="signupPassword">Password</label>
+                <input 
+                  type="password" 
+                  id="signupPassword" 
+                  name="password" 
+                  placeholder="At least 6 characters" 
+                  required
+                  minlength="6"
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="signupPasswordConfirm">Confirm Password</label>
+                <input 
+                  type="password" 
+                  id="signupPasswordConfirm" 
+                  name="passwordConfirm" 
+                  placeholder="Re-enter your password" 
+                  required
+                  minlength="6"
+                >
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%;">Sign Up</button>
+            </form>
+            <div id="signupError" class="error-message" style="display: none;"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Creator Dashboard (shown when logged in) -->
+      <div id="dashboardSection" style="display: none;">
+        <!-- Create Link Section -->
+        <section class="creator-section">
+          <h2>Create a Gated Link</h2>
+          
+          <form id="createLinkForm" class="creator-form">
+            <div class="form-group">
+              <label for="dest_url">Destination URL</label>
+              <input 
+                type="url" 
+                id="dest_url" 
+                name="dest_url" 
+                placeholder="https://example.com/your-content" 
+                required
+              >
+              <small>Where visitors will be redirected after viewing sponsors</small>
+            </div>
+
+            <div class="form-group">
+              <label for="ads_required">Required Sponsor Views</label>
+              <select id="ads_required" name="ads_required" required>
+                <option value="1">1 view</option>
+                <option value="2">2 views</option>
+                <option value="3" selected>3 views</option>
+                <option value="4">4 views</option>
+                <option value="5">5 views</option>
+              </select>
+              <small>More views may reduce conversion</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Generate Link</button>
+          </form>
+
+          <div id="linkResult" class="link-result" style="display: none;">
+            <h3>✅ Link Created Successfully!</h3>
+            <div class="generated-link">
+              <input type="text" id="generatedUrl" readonly>
+              <button id="copyBtn" class="btn btn-secondary">Copy</button>
+            </div>
+            <p class="result-info">
+              Share this link with your audience. 
+            </p>
+          </div>
+
+          <div id="createError" class="error-message" style="display: none;"></div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section class="dashboard-section">
+          <h2>Your Links</h2>
+
+          <div id="dashboardContent">
+            <div class="stats-grid" id="statsGrid">
+              <div class="stat-card">
+                <div class="stat-value" id="totalBalance">$0.00</div>
+                <div class="stat-label">Total Balance</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="totalLinks">0</div>
+                <div class="stat-label">Links Created</div>
+              </div>
+            </div>
+
+            <div id="linksList" class="links-list"></div>
+            <div id="linksLoading" class="loading" style="display: none;">Loading links...</div>
+          </div>
+
+          <div id="dashboardError" class="error-message" style="display: none;"></div>
+        </section>
+      </div>
     </main>
 
     <footer>
@@ -118,123 +188,34 @@
     </footer>
   </div>
 
-  <script>
-    // Create link form handler
-    document.getElementById('createLinkForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const formData = {
-        email: document.getElementById('email').value,
-        dest_url: document.getElementById('dest_url').value,
-        ads_required: parseInt(document.getElementById('ads_required').value)
-      };
+  <!-- Edit Link Modal -->
+  <div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: var(--bg-card); padding: 40px; border-radius: 12px; max-width: 500px; width: 90%;">
+      <h3 style="margin-bottom: 20px;">Edit Link</h3>
+      <form id="editLinkForm">
+        <div class="form-group">
+          <label for="editDestUrl">Destination URL</label>
+          <input type="url" id="editDestUrl" required>
+        </div>
+        <div class="form-group">
+          <label for="editAdsRequired">Required Sponsor Views</label>
+          <select id="editAdsRequired" required>
+            <option value="1">1 view</option>
+            <option value="2">2 views</option>
+            <option value="3">3 views</option>
+            <option value="4">4 views</option>
+            <option value="5">5 views</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" id="cancelEditBtn" class="btn btn-secondary">Cancel</button>
+        </div>
+      </form>
+      <div id="editError" class="error-message" style="display: none; margin-top: 10px;"></div>
+    </div>
+  </div>
 
-      try {
-        const response = await fetch('/api/links', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          // Show success
-          document.getElementById('linkResult').style.display = 'block';
-          document.getElementById('errorMessage').style.display = 'none';
-          document.getElementById('generatedUrl').value = data.url;
-          
-          // Calculate potential earnings
-          const payout = (0.01 * data.ads_required).toFixed(2);
-          document.getElementById('potentialEarnings').textContent = `$${payout}`;
-          
-          // Scroll to result
-          document.getElementById('linkResult').scrollIntoView({ behavior: 'smooth' });
-        } else {
-          // Show error
-          document.getElementById('errorMessage').textContent = data.error || 'Failed to create link';
-          document.getElementById('errorMessage').style.display = 'block';
-          document.getElementById('linkResult').style.display = 'none';
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('errorMessage').textContent = 'Network error. Please try again.';
-        document.getElementById('errorMessage').style.display = 'block';
-      }
-    });
-
-    // Copy button handler
-    document.getElementById('copyBtn').addEventListener('click', () => {
-      const input = document.getElementById('generatedUrl');
-      input.select();
-      document.execCommand('copy');
-      
-      const btn = document.getElementById('copyBtn');
-      btn.textContent = 'Copied!';
-      setTimeout(() => {
-        btn.textContent = 'Copy';
-      }, 2000);
-    });
-
-    // Dashboard loader
-    document.getElementById('loadDashboard').addEventListener('click', async () => {
-      const email = document.getElementById('dashboardEmail').value;
-      
-      if (!email) {
-        document.getElementById('dashboardError').textContent = 'Please enter an email';
-        document.getElementById('dashboardError').style.display = 'block';
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/creator/summary?email=${encodeURIComponent(email)}`);
-        const data = await response.json();
-
-        if (response.ok) {
-          document.getElementById('dashboardContent').style.display = 'block';
-          document.getElementById('dashboardError').style.display = 'none';
-          
-          // Update stats
-          document.getElementById('totalBalance').textContent = `$${data.creator.balance.toFixed(2)}`;
-          document.getElementById('totalLinks').textContent = data.links.length;
-          document.getElementById('totalCompletions').textContent = data.stats.total_completions;
-          document.getElementById('totalViews').textContent = data.stats.total_ad_views || 0;
-          
-          // Display links
-          const linksList = document.getElementById('linksList');
-          if (data.links.length === 0) {
-            linksList.innerHTML = '<p class="empty-state">No links created yet. Create your first link above!</p>';
-          } else {
-            linksList.innerHTML = data.links.map(link => `
-              <div class="link-item">
-                <div class="link-info">
-                  <div class="link-slug">/l/${link.slug}</div>
-                  <div class="link-dest">${link.dest_url}</div>
-                  <div class="link-meta">${link.ads_required} ads required • Created ${new Date(link.created_at).toLocaleDateString()}</div>
-                </div>
-                <button class="btn btn-small" onclick="copyLinkUrl('${link.slug}')">Copy Link</button>
-              </div>
-            `).join('');
-          }
-        } else {
-          document.getElementById('dashboardError').textContent = data.error || 'Creator not found';
-          document.getElementById('dashboardError').style.display = 'block';
-          document.getElementById('dashboardContent').style.display = 'none';
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('dashboardError').textContent = 'Network error. Please try again.';
-        document.getElementById('dashboardError').style.display = 'block';
-      }
-    });
-
-    // Copy link URL helper
-    function copyLinkUrl(slug) {
-      const url = `${window.location.origin}/l/${slug}`;
-      navigator.clipboard.writeText(url).then(() => {
-        alert('Link copied to clipboard!');
-      });
-    }
-  </script>
+  <script src="/creator.js"></script>
 </body>
 </html>
