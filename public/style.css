@@ -1869,7 +1869,7 @@ a:not(.btn) {
 
 /* Body padding for fixed navbar */
 body {
-  padding-top: 80px;
+  padding-top: var(--space-20); /* 80px */
 }
 
 /* Responsive navbar */
