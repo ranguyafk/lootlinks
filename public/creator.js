@@ -64,7 +64,21 @@ function showDashboard() {
   document.getElementById('userNav').style.display = 'inline';
   document.getElementById('guestNav').style.display = 'none';
   document.getElementById('userEmail').textContent = currentUser.email;
+  updateDashboardStats();
+}
+
+// Update dashboard stats
+function updateDashboardStats() {
   document.getElementById('totalBalance').textContent = `$${currentUser.balance.toFixed(2)}`;
+  document.getElementById('totalLinks').textContent = currentLinks.length;
+  
+  // Calculate total views (mock data for now - would come from backend)
+  const totalViews = currentLinks.reduce((sum, link) => sum + (link.views || 0), 0);
+  document.getElementById('totalViews').textContent = totalViews;
+  
+  // Calculate conversion rate (mock data)
+  const conversionRate = currentLinks.length > 0 ? ((totalViews / (currentLinks.length * 100)) * 100).toFixed(1) : 0;
+  document.getElementById('conversionRate').textContent = `${conversionRate}%`;
 }
 
 // Helper function to safely parse JSON
@@ -175,10 +189,16 @@ async function loadLinks() {
 
     if (result.ok) {
       currentLinks = result.data.links;
-      document.getElementById('totalLinks').textContent = currentLinks.length;
+      updateDashboardStats();
       
       if (currentLinks.length === 0) {
-        linksList.innerHTML = '<p class="empty-state">No links created yet. Create your first link above!</p>';
+        linksList.innerHTML = `
+          <div class="empty-state">
+            <h3>🚀 No Links Yet</h3>
+            <p>Create your first gated link above to start monetizing your content!</p>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">It only takes a few seconds to get started.</p>
+          </div>
+        `;
       } else {
         linksList.innerHTML = currentLinks.map(link => `
           <div class="link-item">
