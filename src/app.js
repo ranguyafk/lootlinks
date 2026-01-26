@@ -140,7 +140,16 @@ app.post('/api/auth/check-rate-limit', (req, res) => {
       return res.status(400).json({ error: 'Invalid action' });
     }
     
-    const identifier = req.ip || req.connection.remoteAddress;
+    // Extract IP with proxy header validation
+    let identifier = req.ip || req.connection.remoteAddress;
+    const forwardedFor = req.headers['x-forwarded-for'];
+    if (forwardedFor) {
+      const ips = forwardedFor.split(',').map(ip => ip.trim());
+      if (ips.length > 0 && ips[0]) {
+        identifier = ips[0];
+      }
+    }
+    
     const result = checkRateLimit(identifier, action);
     
     res.json({

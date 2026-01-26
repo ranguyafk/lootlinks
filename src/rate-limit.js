@@ -36,37 +36,42 @@ function checkRateLimit(identifier, action) {
   const now = Date.now();
   const windowStart = new Date(now - windowMs);
 
-  // Get or create rate limit record
-  const record = db.getRateLimitRecord(identifier, action, windowStart);
-  
-  if (!record) {
-    // No record exists, create one
-    db.createRateLimitRecord(identifier, action);
+  // Use a transaction to handle race conditions
+  const result = db.transaction(() => {
+    // Get or create rate limit record
+    let record = db.getRateLimitRecord(identifier, action, windowStart);
+    
+    if (!record) {
+      // No record exists or expired, create one
+      db.createRateLimitRecord(identifier, action);
+      return {
+        allowed: true,
+        remaining: config.maxAttempts - 1,
+        resetAt: new Date(now + windowMs)
+      };
+    }
+
+    // Check if we're within the rate limit
+    if (record.count >= config.maxAttempts) {
+      const resetAt = new Date(new Date(record.window_start).getTime() + windowMs);
+      return {
+        allowed: false,
+        remaining: 0,
+        resetAt
+      };
+    }
+
+    // Increment the counter
+    db.incrementRateLimitRecord(record.id);
+
     return {
       allowed: true,
-      remaining: config.maxAttempts - 1,
-      resetAt: new Date(now + windowMs)
+      remaining: config.maxAttempts - (record.count + 1),
+      resetAt: new Date(new Date(record.window_start).getTime() + windowMs)
     };
-  }
+  })();
 
-  // Check if we're within the rate limit
-  if (record.count >= config.maxAttempts) {
-    const resetAt = new Date(record.window_start.getTime() + windowMs);
-    return {
-      allowed: false,
-      remaining: 0,
-      resetAt
-    };
-  }
-
-  // Increment the counter
-  db.incrementRateLimitRecord(record.id);
-
-  return {
-    allowed: true,
-    remaining: config.maxAttempts - (record.count + 1),
-    resetAt: new Date(record.window_start.getTime() + windowMs)
-  };
+  return result;
 }
 
 /**
@@ -96,7 +101,19 @@ function cleanupOldRecords() {
  */
 function rateLimitMiddleware(action) {
   return (req, res, next) => {
-    const identifier = req.ip || req.connection.remoteAddress;
+    // Extract IP with proxy header validation
+    let identifier = req.ip || req.connection.remoteAddress;
+    
+    // Check for X-Forwarded-For if behind a proxy, but validate
+    const forwardedFor = req.headers['x-forwarded-for'];
+    if (forwardedFor) {
+      // Take the first IP in the chain (client IP)
+      const ips = forwardedFor.split(',').map(ip => ip.trim());
+      if (ips.length > 0 && ips[0]) {
+        identifier = ips[0];
+      }
+    }
+    
     const result = checkRateLimit(identifier, action);
 
     // Set rate limit headers

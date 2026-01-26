@@ -367,9 +367,9 @@ function getRateLimitRecord(identifier, action, windowStart) {
 }
 
 function createRateLimitRecord(identifier, action) {
-  // Use INSERT OR REPLACE to handle race conditions
+  // Use INSERT OR IGNORE to only create if not exists
   db.prepare(`
-    INSERT OR REPLACE INTO auth_rate_limits (identifier, action, count, window_start)
+    INSERT OR IGNORE INTO auth_rate_limits (identifier, action, count, window_start)
     VALUES (?, ?, 1, CURRENT_TIMESTAMP)
   `).run(identifier, action);
 }
