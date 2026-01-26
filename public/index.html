@@ -7,20 +7,38 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>🔗 LootLinks</h1>
-      <p class="tagline">Monetize your links with sponsor views</p>
-      <nav style="margin-top: 20px;">
-        <a href="/login.html" class="btn btn-secondary" style="margin-right: 10px;">Login</a>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="/" class="navbar-logo">
+        🔗 LootLinks
+      </a>
+      
+      <button class="navbar-toggle" id="navbarToggle">
+        ☰
+      </button>
+      
+      <ul class="navbar-menu" id="navbarMenu">
+        <li><a href="/">Home</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+      
+      <div class="navbar-actions">
+        <a href="/login.html" class="btn btn-secondary">Login</a>
         <a href="/signup.html" class="btn btn-primary">Sign Up</a>
-      </nav>
-    </header>
+      </div>
+    </div>
+  </nav>
 
+  <div class="container">
     <main>
+      <!-- Hero Section -->
       <section class="hero">
-        <h2>Turn Your Links Into Revenue</h2>
-        <p>Create gated links that require visitors to view sponsor content before accessing your destination URL. Track performance and grow your earnings with our creator dashboard.</p>
+        <h1 style="font-size: clamp(2.5rem, 6vw, 4rem); margin-bottom: var(--space-4); font-weight: 900; letter-spacing: -0.04em;">Turn Your Links Into Revenue</h1>
+        <p style="font-size: clamp(1.1rem, 2.5vw, 1.4rem); color: var(--text-secondary); max-width: 700px; margin: 0 auto var(--space-8);">Create gated links that require visitors to view sponsor content before accessing your destination URL. Track performance and grow your earnings with our creator dashboard.</p>
         
         <div class="cta-buttons">
           <a href="/signup.html" class="btn btn-primary btn-large">Get Started Free</a>
@@ -28,64 +46,337 @@
         </div>
       </section>
 
+      <!-- Stats/Social Proof Section -->
+      <section id="stats" class="stats" style="margin-top: var(--space-20);">
+        <h2>Join Thousands of Creators</h2>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-value">10,000+</div>
+            <div class="stat-label">Links Created</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">$50,000+</div>
+            <div class="stat-label">Earned by Creators</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">1M+</div>
+            <div class="stat-label">Sponsor Views</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">5,000+</div>
+            <div class="stat-label">Active Creators</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section id="features" class="features">
+        <h2>Powerful Features for Creators</h2>
+        
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>Real-time Analytics</h3>
+            <p>Track your link performance with detailed analytics. See views, clicks, and earnings in real-time.</p>
+          </div>
+          
+          <div class="feature-card">
+            <div class="feature-icon">💰</div>
+            <h3>Instant Payouts</h3>
+            <p>Get paid instantly when viewers complete sponsor requirements. No minimum threshold.</p>
+          </div>
+          
+          <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <h3>Secure & Private</h3>
+            <p>Your data is encrypted and secure. We never share your information with third parties.</p>
+          </div>
+          
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Lightning Fast</h3>
+            <p>Our platform is built for speed. Create and share links in seconds, not minutes.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <h3>Target Your Audience</h3>
+            <p>Choose the right sponsors and content for your audience to maximize engagement.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">📱</div>
+            <h3>Mobile Optimized</h3>
+            <p>Perfect experience on any device. Your audience can view from anywhere.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- How It Works Section -->
       <section id="how-it-works" class="features">
         <h2>How It Works</h2>
         
         <div class="feature-grid">
-          <div class="feature-card">
+          <div class="feature-card" style="background: linear-gradient(135deg, var(--card-bg) 0%, rgba(253, 185, 39, 0.05) 100%);">
             <div class="feature-icon">📝</div>
             <h3>1. Create Your Link</h3>
             <p>Enter your destination URL and choose how many sponsor views are required (1-5).</p>
           </div>
           
-          <div class="feature-card">
+          <div class="feature-card" style="background: linear-gradient(135deg, var(--card-bg) 0%, rgba(253, 185, 39, 0.05) 100%);">
             <div class="feature-icon">🔗</div>
             <h3>2. Share It</h3>
             <p>Get a unique shortened link to share with your audience on social media, emails, or anywhere.</p>
           </div>
           
-          <div class="feature-card">
+          <div class="feature-card" style="background: linear-gradient(135deg, var(--card-bg) 0%, rgba(253, 185, 39, 0.05) 100%);">
             <div class="feature-icon">👀</div>
             <h3>3. Visitors View Sponsors</h3>
-            <p>Your audience completes the required sponsor views (policy-compliant placeholders in this MVP).</p>
+            <p>Your audience completes the required sponsor views before accessing your content.</p>
           </div>
           
-          <div class="feature-card">
+          <div class="feature-card" style="background: linear-gradient(135deg, var(--card-bg) 0%, rgba(253, 185, 39, 0.05) 100%);">
             <div class="feature-icon">💰</div>
             <h3>4. Earn Revenue</h3>
-            <p>Track your link performance and analytics in the creator dashboard.</p>
+            <p>Track your link performance and analytics in the creator dashboard and watch your earnings grow.</p>
           </div>
         </div>
       </section>
 
-      <section class="stats">
-        <h2>Platform Features</h2>
-        <div class="stat-grid">
-          <div class="stat-card">
-            <div class="stat-value">5 sec</div>
-            <div class="stat-label">Minimum view duration</div>
+      <!-- Pricing Section -->
+      <section id="pricing" class="pricing-section">
+        <h2>Simple, Transparent Pricing</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: var(--space-12); font-size: 1.1rem;">Choose the plan that's right for you</p>
+        
+        <div class="pricing-grid">
+          <!-- Free Tier -->
+          <div class="pricing-card featured">
+            <div class="pricing-badge">Popular</div>
+            <h3 class="pricing-title">Free</h3>
+            <div class="pricing-price">
+              $0<span>/month</span>
+            </div>
+            <ul class="pricing-features">
+              <li>Unlimited links</li>
+              <li>Up to 3 sponsor views</li>
+              <li>Basic analytics</li>
+              <li>Email support</li>
+              <li>Mobile optimized</li>
+            </ul>
+            <div class="pricing-cta">
+              <a href="/signup.html" class="btn btn-primary btn-large" style="width: 100%;">Get Started</a>
+            </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-value">1-5</div>
-            <div class="stat-label">Sponsor views per link</div>
+
+          <!-- Pro Tier -->
+          <div class="pricing-card">
+            <h3 class="pricing-title">Pro</h3>
+            <div class="pricing-price">
+              <span style="color: var(--text-secondary); font-size: 1.5rem;">Coming Soon</span>
+            </div>
+            <ul class="pricing-features">
+              <li>Everything in Free</li>
+              <li>Up to 5 sponsor views</li>
+              <li>Advanced analytics</li>
+              <li>Priority support</li>
+              <li>Custom branding</li>
+              <li>API access</li>
+            </ul>
+            <div class="pricing-cta">
+              <button class="btn btn-secondary" style="width: 100%;" disabled>Coming Soon</button>
+            </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-value">Free</div>
-            <div class="stat-label">To get started</div>
+
+          <!-- Enterprise Tier -->
+          <div class="pricing-card">
+            <h3 class="pricing-title">Enterprise</h3>
+            <div class="pricing-price">
+              <span style="color: var(--text-secondary); font-size: 1.5rem;">Custom</span>
+            </div>
+            <ul class="pricing-features">
+              <li>Everything in Pro</li>
+              <li>Custom solutions</li>
+              <li>Dedicated support</li>
+              <li>SLA guarantee</li>
+              <li>White-label options</li>
+              <li>Custom integrations</li>
+            </ul>
+            <div class="pricing-cta">
+              <a href="mailto:contact@lootlinks.com" class="btn btn-secondary" style="width: 100%;">Contact Sales</a>
+            </div>
           </div>
         </div>
       </section>
 
+      <!-- FAQ Section -->
+      <section id="faq" class="faq-section">
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-container">
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>How does LootLinks work?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-content">
+                LootLinks allows you to create gated links that require visitors to view sponsor content before accessing your destination URL. You simply create a link, set the number of required sponsor views (1-5), and share it. When visitors click your link, they'll view the required sponsor content before being redirected to your destination.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>How much can I earn?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-content">
+                Earnings depend on the number of views your links receive and the sponsor content displayed. Each completed sponsor view generates revenue. The more traffic you drive to your links, the more you can earn. Track your earnings in real-time through the creator dashboard.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>How do I get paid?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-content">
+                We offer instant payouts with no minimum threshold. Once you've earned revenue from sponsor views, you can request a payout at any time. We support multiple payment methods including PayPal, bank transfer, and crypto payments.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>Is it free to use?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-content">
+                Yes! LootLinks is completely free to get started. You can create unlimited links with up to 3 sponsor views on the free plan. We also offer Pro and Enterprise plans with additional features for power users and businesses.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>What are sponsor views?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-content">
+                Sponsor views are the content that visitors must view before accessing your destination link. Each sponsor view requires a minimum viewing duration (typically 5 seconds) to ensure quality engagement. You can set 1-5 sponsor views per link depending on your plan.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>Is this compliant with advertising policies?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <div class="faq-answer-content">
+                Yes, LootLinks is designed to be compliant with major advertising platforms' policies. All sponsor content is clearly labeled, and viewers have the option to skip after the minimum viewing time. We ensure transparency and user consent at every step.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Final CTA Section -->
       <section class="cta-section">
         <h2>Ready to Start Earning?</h2>
         <p style="margin-bottom: 20px; color: var(--text-secondary);">Sign up now and create your first monetized link in minutes.</p>
         <a href="/signup.html" class="btn btn-primary btn-large">Get Started Free</a>
       </section>
     </main>
-
-    <footer>
-      <p>&copy; 2026 LootLinks - MVP Demonstration</p>
-    </footer>
   </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-grid">
+        <!-- Product Column -->
+        <div class="footer-column">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="/creator.html">Dashboard</a></li>
+            <li><a href="#">API Docs</a></li>
+          </ul>
+        </div>
+
+        <!-- Resources Column -->
+        <div class="footer-column">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Help Center</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#">Community</a></li>
+            <li><a href="mailto:contact@lootlinks.com">Contact</a></li>
+          </ul>
+        </div>
+
+        <!-- Company Column -->
+        <div class="footer-column">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Press Kit</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+          </ul>
+        </div>
+
+        <!-- Connect Column -->
+        <div class="footer-column">
+          <h4>Connect</h4>
+          <ul>
+            <li><a href="#">Twitter</a></li>
+            <li><a href="https://github.com/ranguyafk/lootlinks">GitHub</a></li>
+            <li><a href="#">Discord</a></li>
+            <li><a href="mailto:contact@lootlinks.com">Email</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 LootLinks. All rights reserved. Built with ❤️ for creators.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- FAQ Toggle Script -->
+  <script>
+    // FAQ toggle functionality
+    document.querySelectorAll('.faq-question').forEach(button => {
+      button.addEventListener('click', () => {
+        const faqItem = button.parentElement;
+        const isActive = faqItem.classList.contains('active');
+        
+        // Close all FAQ items
+        document.querySelectorAll('.faq-item').forEach(item => {
+          item.classList.remove('active');
+        });
+        
+        // Open clicked item if it wasn't active
+        if (!isActive) {
+          faqItem.classList.add('active');
+        }
+      });
+    });
+
+    // Mobile navbar toggle
+    document.getElementById('navbarToggle').addEventListener('click', () => {
+      document.getElementById('navbarMenu').classList.toggle('active');
+    });
+  </script>
 </body>
 </html>

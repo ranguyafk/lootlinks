@@ -177,6 +177,10 @@ async function loadLinks() {
       currentLinks = result.data.links;
       document.getElementById('totalLinks').textContent = currentLinks.length;
       
+      // Calculate total views from all links
+      const totalViews = currentLinks.reduce((sum, link) => sum + (link.ad_views_count || 0), 0);
+      document.getElementById('totalViews').textContent = totalViews;
+      
       if (currentLinks.length === 0) {
         linksList.innerHTML = '<p class="empty-state">No links created yet. Create your first link above!</p>';
       } else {
