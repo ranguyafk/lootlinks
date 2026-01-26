@@ -63,7 +63,7 @@
   --text-secondary: #d1d5db;
   --text-tertiary: #9ca3af;
   --text-muted: #6b7280;
-  --text-inverse: #1a1a1a;
+  --text-inverse: #000000;
   
   /* Border System */
   --border-subtle: rgba(255, 255, 255, 0.04);
@@ -481,7 +481,7 @@ strong {
 /* Primary Button - Gradient Magic */
 .btn-primary {
   background: var(--primary-gradient);
-  color: #1a1a1a;
+  color: #000000;
   border: 1px solid rgba(255, 213, 0, 0.2);
   box-shadow: var(--shadow-md), var(--glow-primary-sm);
   position: relative;

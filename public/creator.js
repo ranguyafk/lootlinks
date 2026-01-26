@@ -72,12 +72,14 @@ function updateDashboardStats() {
   document.getElementById('totalBalance').textContent = `$${currentUser.balance.toFixed(2)}`;
   document.getElementById('totalLinks').textContent = currentLinks.length;
   
-  // Calculate total views (mock data for now - would come from backend)
+  // Calculate total views from actual link data (views property may not exist yet)
   const totalViews = currentLinks.reduce((sum, link) => sum + (link.views || 0), 0);
   document.getElementById('totalViews').textContent = totalViews;
   
-  // Calculate conversion rate (mock data)
-  const conversionRate = currentLinks.length > 0 ? ((totalViews / (currentLinks.length * 100)) * 100).toFixed(1) : 0;
+  // Calculate conversion rate (placeholder calculation - would use actual click/view data from backend)
+  const conversionRate = currentLinks.length > 0 && totalViews > 0 
+    ? ((totalViews / (currentLinks.length * 100)) * 100).toFixed(1) 
+    : 0;
   document.getElementById('conversionRate').textContent = `${conversionRate}%`;
 }
 
