@@ -13,15 +13,45 @@
   </script>
 </head>
 <body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="/index.html" class="navbar-logo">
+        🔗 LootLinks
+      </a>
+      
+      <div class="navbar-links">
+        <a href="/index.html" class="navbar-link">Home</a>
+        <a href="/features.html" class="navbar-link">Features</a>
+        <a href="/pricing.html" class="navbar-link">Pricing</a>
+        <a href="/creator.html" class="navbar-link">Dashboard</a>
+      </div>
+      
+      <div class="navbar-auth">
+        <a href="/login.html" class="btn btn-secondary">Login</a>
+        <a href="/signup.html" class="btn btn-primary">Sign Up</a>
+      </div>
+
+      <button class="navbar-toggle" onclick="toggleMobileMenu()">☰</button>
+    </div>
+  </nav>
+
+  <div class="navbar-mobile-menu" id="mobileMenu">
+    <div class="navbar-mobile-links">
+      <a href="/index.html" class="navbar-link">Home</a>
+      <a href="/features.html" class="navbar-link">Features</a>
+      <a href="/pricing.html" class="navbar-link">Pricing</a>
+      <a href="/creator.html" class="navbar-link">Dashboard</a>
+    </div>
+    <div class="navbar-mobile-auth">
+      <a href="/login.html" class="btn btn-secondary">Login</a>
+      <a href="/signup.html" class="btn btn-primary">Sign Up</a>
+    </div>
+  </div>
+
+  <div class="navbar-spacer"></div>
+
   <div class="container">
-    <header>
-      <h1>🔗 LootLinks</h1>
-      <p class="tagline">Monetize your links with sponsor views</p>
-      <nav style="margin-top: 20px;">
-        <a href="/index.html">Home</a>
-        <a href="/login.html">Login</a>
-      </nav>
-    </header>
 
     <main>
       <section class="creator-section">
@@ -85,11 +115,72 @@
         </p>
       </section>
     </main>
-
-    <footer>
-      <p>&copy; 2026 LootLinks - MVP Demonstration</p>
-    </footer>
   </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-grid">
+        <div class="footer-column">
+          <h4>Product</h4>
+          <div class="footer-links">
+            <a href="/features.html" class="footer-link">Features</a>
+            <a href="/pricing.html" class="footer-link">Pricing</a>
+            <a href="/creator.html" class="footer-link">Dashboard</a>
+            <a href="#" class="footer-link">API</a>
+          </div>
+        </div>
+
+        <div class="footer-column">
+          <h4>Resources</h4>
+          <div class="footer-links">
+            <a href="#" class="footer-link">Documentation</a>
+            <a href="#" class="footer-link">Blog</a>
+            <a href="#" class="footer-link">Help Center</a>
+            <a href="#" class="footer-link">Status</a>
+          </div>
+        </div>
+
+        <div class="footer-column">
+          <h4>Company</h4>
+          <div class="footer-links">
+            <a href="#" class="footer-link">About</a>
+            <a href="#" class="footer-link">Careers</a>
+            <a href="#" class="footer-link">Contact</a>
+            <a href="#" class="footer-link">Privacy</a>
+          </div>
+        </div>
+
+        <div class="footer-column">
+          <h4>Connect</h4>
+          <div class="footer-links">
+            <a href="#" class="footer-link">Twitter</a>
+            <a href="#" class="footer-link">GitHub</a>
+            <a href="#" class="footer-link">Discord</a>
+            <a href="#" class="footer-link">LinkedIn</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-copyright">
+          &copy; 2026 LootLinks. All rights reserved.
+        </div>
+        <div class="footer-legal">
+          <a href="#">Terms of Service</a>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Cookie Policy</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('active');
+    }
+  </script>
 
   <script src="/js/auth.js"></script>
   <script>
@@ -166,11 +257,8 @@
           console.error('Signup error:', error);
           errorMessage.textContent = 'An unexpected error occurred. Please try again.';
           errorMessage.style.display = 'block';
-          signupBtn.disabled = false;
-          signupBtn.textContent = 'Create Account';
-        }
-      });
-    });
-  </script>
+</footer>
+
+  <script src="/js/common.js"></script>
 </body>
 </html>
