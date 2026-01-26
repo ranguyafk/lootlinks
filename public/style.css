@@ -440,6 +440,7 @@ strong {
   align-items: center;
   justify-content: center;
   padding: var(--space-4) var(--space-8);
+  min-height: 44px;
   border-radius: var(--radius-xl);
   text-decoration: none;
   font-weight: 600;
@@ -455,6 +456,8 @@ strong {
   outline: none;
   user-select: none;
   box-shadow: var(--shadow-sm);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Ripple effect on click */
@@ -1573,6 +1576,7 @@ footer a:hover {
   
   .cta-buttons .btn {
     width: 100%;
+    max-width: 100%;
   }
   
   .feature-grid {
@@ -1629,17 +1633,54 @@ footer a:hover {
   .cta-section {
     padding: var(--space-10) var(--space-6);
   }
+  
+  /* Ensure proper touch targets on mobile */
+  .form-group input,
+  .form-group select {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  
+  /* Better mobile spacing for hero section */
+  .hero-section {
+    padding: 4rem 1.5rem 3rem;
+  }
+  
+  .hero-section h1 {
+    font-size: clamp(2rem, 9vw, 3rem);
+  }
+  
+  .hero-section .subtitle {
+    font-size: 1.1rem;
+    line-height: 1.6;
+  }
+  
+  /* Mobile-optimized section padding */
+  .section {
+    padding: 3rem 1.5rem;
+  }
+  
+  .section-title {
+    font-size: clamp(1.75rem, 7vw, 2.25rem);
+  }
+  
+  /* Testimonials on mobile */
+  .testimonials-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {
   .btn {
     padding: var(--space-3) var(--space-6);
     font-size: 0.9rem;
+    min-height: 44px;
   }
   
   .btn-large {
     padding: var(--space-4) var(--space-7);
     font-size: 1rem;
+    min-height: 48px;
   }
   
   .feature-icon {
@@ -1656,6 +1697,25 @@ footer a:hover {
   
   h3 {
     font-size: clamp(1.25rem, 5vw, 1.5rem);
+  }
+  
+  /* Navbar adjustments for very small screens */
+  .navbar-container {
+    padding: 1rem 1.25rem;
+  }
+  
+  .navbar-mobile-menu.active {
+    padding: 1.25rem 1.5rem;
+  }
+  
+  /* Dashboard stats on small screens */
+  .dashboard-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Footer adjustments */
+  .site-footer {
+    padding: 3rem 1.5rem 1.5rem;
   }
 }
 
@@ -1858,10 +1918,22 @@ a:not(.btn) {
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
+  touch-action: manipulation;
+  transition: all 0.2s ease;
+}
+
+.navbar-toggle:hover {
+  color: #FFD500;
+  transform: scale(1.1);
+}
+
+.navbar-toggle:active {
+  transform: scale(0.95);
 }
 
 .navbar-mobile-menu {
-  display: none;
   position: fixed;
   top: 73px;
   left: 0;
@@ -1869,12 +1941,16 @@ a:not(.btn) {
   background: rgba(26, 26, 26, 0.98);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 1.5rem 2rem;
+  padding: 0;
   z-index: 999;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
 }
 
 .navbar-mobile-menu.active {
-  display: block;
+  max-height: 500px;
+  padding: 1.5rem 2rem;
 }
 
 .navbar-mobile-links {
@@ -1882,6 +1958,21 @@ a:not(.btn) {
   flex-direction: column;
   gap: 1.25rem;
   margin-bottom: 1.5rem;
+}
+
+.navbar-mobile-links .navbar-link {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-lg);
+  transition: all 0.2s ease;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  touch-action: manipulation;
+}
+
+.navbar-mobile-links .navbar-link:active {
+  background: rgba(255, 213, 0, 0.1);
+  transform: scale(0.98);
 }
 
 .navbar-mobile-auth {
@@ -1893,6 +1984,12 @@ a:not(.btn) {
 .navbar-mobile-auth .btn {
   width: 100%;
   text-align: center;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.navbar-mobile-auth .btn:active {
+  transform: scale(0.98);
 }
 
 .navbar-spacer {
