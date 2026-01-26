@@ -5,87 +5,737 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LootLinks - Monetize Your Links</title>
   <link rel="stylesheet" href="/style.css">
+  <style>
+    /* Additional homepage styles */
+    .hero-section {
+      padding: 6rem 2rem 4rem;
+      text-align: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero-section h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, #FFD500 0%, #FFC700 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-section .subtitle {
+      font-size: 1.35rem;
+      color: var(--text-secondary);
+      margin-bottom: 2.5rem;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.6;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 4rem;
+    }
+
+    .section {
+      padding: 5rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      margin-bottom: 4rem;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Stats Section */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      padding: 2.5rem;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-focus);
+      box-shadow: var(--shadow-lg), var(--glow-primary-sm);
+    }
+
+    .stat-value {
+      font-size: 3rem;
+      font-weight: 800;
+      color: #FFD500;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 1rem;
+    }
+
+    /* Testimonials */
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .testimonial-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      transition: all 0.3s;
+    }
+
+    .testimonial-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-focus);
+    }
+
+    .testimonial-content {
+      font-size: 1.05rem;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      font-style: italic;
+    }
+
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .testimonial-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .testimonial-info h4 {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .testimonial-info p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* Pricing */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .pricing-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      padding: 2.5rem;
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .pricing-card.featured {
+      border-color: var(--border-focus);
+      transform: scale(1.05);
+      box-shadow: var(--shadow-lg), var(--glow-primary-md);
+    }
+
+    .pricing-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-focus);
+    }
+
+    .pricing-card.featured:hover {
+      transform: scale(1.05) translateY(-4px);
+    }
+
+    .pricing-badge {
+      background: var(--primary-gradient);
+      color: #1a1a1a;
+      padding: 0.35rem 1rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+
+    .pricing-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .pricing-price {
+      font-size: 3rem;
+      font-weight: 800;
+      color: #FFD500;
+      margin-bottom: 0.5rem;
+    }
+
+    .pricing-price span {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .pricing-description {
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .pricing-features {
+      list-style: none;
+      margin-bottom: 2rem;
+    }
+
+    .pricing-features li {
+      padding: 0.75rem 0;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .pricing-features li::before {
+      content: '✓';
+      color: #FFD500;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+
+    /* FAQ */
+    .faq-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .faq-item {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+
+    .faq-item:hover {
+      border-color: var(--border-focus);
+    }
+
+    .faq-question {
+      padding: 1.5rem 2rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 1.1rem;
+      user-select: none;
+    }
+
+    .faq-question::after {
+      content: '+';
+      font-size: 1.5rem;
+      color: #FFD500;
+      transition: transform 0.3s;
+    }
+
+    .faq-item.active .faq-question::after {
+      transform: rotate(45deg);
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+
+    .faq-item.active .faq-answer {
+      max-height: 500px;
+    }
+
+    .faq-answer-content {
+      padding: 0 2rem 1.5rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* CTA Section */
+    .cta-final {
+      background: var(--card-bg);
+      border: 1px solid var(--border-focus);
+      border-radius: var(--radius-2xl);
+      padding: 4rem 2rem;
+      text-align: center;
+      max-width: 900px;
+      margin: 0 auto;
+      box-shadow: var(--shadow-lg), var(--glow-primary-md);
+    }
+
+    .cta-final h2 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+    }
+
+    .cta-final p {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .hero-section h1 {
+        font-size: 2.5rem;
+      }
+
+      .hero-section .subtitle {
+        font-size: 1.1rem;
+      }
+
+      .section-title {
+        font-size: 2rem;
+      }
+
+      .pricing-card.featured {
+        transform: scale(1);
+      }
+
+      .pricing-card.featured:hover {
+        transform: translateY(-4px);
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>🔗 LootLinks</h1>
-      <p class="tagline">Monetize your links with sponsor views</p>
-      <nav style="margin-top: 20px;">
-        <a href="/login.html" class="btn btn-secondary" style="margin-right: 10px;">Login</a>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="/index.html" class="navbar-logo">
+        🔗 LootLinks
+      </a>
+      
+      <div class="navbar-links">
+        <a href="/index.html" class="navbar-link">Home</a>
+        <a href="/features.html" class="navbar-link">Features</a>
+        <a href="/pricing.html" class="navbar-link">Pricing</a>
+        <a href="/creator.html" class="navbar-link">Dashboard</a>
+      </div>
+      
+      <div class="navbar-auth">
+        <a href="/login.html" class="btn btn-secondary">Login</a>
         <a href="/signup.html" class="btn btn-primary">Sign Up</a>
-      </nav>
-    </header>
+      </div>
 
-    <main>
-      <section class="hero">
-        <h2>Turn Your Links Into Revenue</h2>
-        <p>Create gated links that require visitors to view sponsor content before accessing your destination URL. Track performance and grow your earnings with our creator dashboard.</p>
-        
-        <div class="cta-buttons">
-          <a href="/signup.html" class="btn btn-primary btn-large">Get Started Free</a>
-          <a href="#how-it-works" class="btn btn-secondary">Learn More</a>
-        </div>
-      </section>
+      <button class="navbar-toggle" onclick="toggleMobileMenu()">☰</button>
+    </div>
+  </nav>
 
-      <section id="how-it-works" class="features">
-        <h2>How It Works</h2>
-        
-        <div class="feature-grid">
-          <div class="feature-card">
-            <div class="feature-icon">📝</div>
-            <h3>1. Create Your Link</h3>
-            <p>Enter your destination URL and choose how many sponsor views are required (1-5).</p>
-          </div>
-          
-          <div class="feature-card">
-            <div class="feature-icon">🔗</div>
-            <h3>2. Share It</h3>
-            <p>Get a unique shortened link to share with your audience on social media, emails, or anywhere.</p>
-          </div>
-          
-          <div class="feature-card">
-            <div class="feature-icon">👀</div>
-            <h3>3. Visitors View Sponsors</h3>
-            <p>Your audience completes the required sponsor views (policy-compliant placeholders in this MVP).</p>
-          </div>
-          
-          <div class="feature-card">
-            <div class="feature-icon">💰</div>
-            <h3>4. Earn Revenue</h3>
-            <p>Track your link performance and analytics in the creator dashboard.</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="stats">
-        <h2>Platform Features</h2>
-        <div class="stat-grid">
-          <div class="stat-card">
-            <div class="stat-value">5 sec</div>
-            <div class="stat-label">Minimum view duration</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">1-5</div>
-            <div class="stat-label">Sponsor views per link</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">Free</div>
-            <div class="stat-label">To get started</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="cta-section">
-        <h2>Ready to Start Earning?</h2>
-        <p style="margin-bottom: 20px; color: var(--text-secondary);">Sign up now and create your first monetized link in minutes.</p>
-        <a href="/signup.html" class="btn btn-primary btn-large">Get Started Free</a>
-      </section>
-    </main>
-
-    <footer>
-      <p>&copy; 2026 LootLinks - MVP Demonstration</p>
-    </footer>
+  <div class="navbar-mobile-menu" id="mobileMenu">
+    <div class="navbar-mobile-links">
+      <a href="/index.html" class="navbar-link">Home</a>
+      <a href="/features.html" class="navbar-link">Features</a>
+      <a href="/pricing.html" class="navbar-link">Pricing</a>
+      <a href="/creator.html" class="navbar-link">Dashboard</a>
+    </div>
+    <div class="navbar-mobile-auth">
+      <a href="/login.html" class="btn btn-secondary">Login</a>
+      <a href="/signup.html" class="btn btn-primary">Sign Up</a>
+    </div>
   </div>
+
+  <div class="navbar-spacer"></div>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <h1>Turn Your Links Into Revenue</h1>
+    <p class="subtitle">
+      Create gated links that require visitors to view sponsor content before accessing your destination URL. 
+      Track performance and grow your earnings with our creator dashboard.
+    </p>
+    
+    <div class="cta-buttons">
+      <a href="/signup.html" class="btn btn-primary btn-large">Get Started Free</a>
+      <a href="#how-it-works" class="btn btn-secondary btn-large">Learn More</a>
+    </div>
+  </section>
+
+  <!-- Stats/Social Proof Section -->
+  <section class="section">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">10,000+</div>
+        <div class="stat-label">Links Created</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">50,000+</div>
+        <div class="stat-label">Total Views</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">$5,000+</div>
+        <div class="stat-label">Earned by Creators</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="section">
+    <h2 class="section-title">How It Works</h2>
+    <p class="section-subtitle">Start monetizing your links in four simple steps</p>
+    
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📝</div>
+        <h3>1. Create Your Link</h3>
+        <p>Enter your destination URL and choose how many sponsor views are required (1-5).</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">🔗</div>
+        <h3>2. Share It</h3>
+        <p>Get a unique shortened link to share with your audience on social media, emails, or anywhere.</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">👀</div>
+        <h3>3. Visitors View Sponsors</h3>
+        <p>Your audience completes the required sponsor views (policy-compliant placeholders in this MVP).</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">💰</div>
+        <h3>4. Earn Revenue</h3>
+        <p>Track your link performance and analytics in the creator dashboard.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="section">
+    <h2 class="section-title">What Creators Say</h2>
+    <p class="section-subtitle">Join thousands of creators already earning with LootLinks</p>
+    
+    <div class="testimonials-grid">
+      <div class="testimonial-card">
+        <div class="testimonial-content">
+          "LootLinks has completely changed how I monetize my content. I've earned over $500 in the first month alone!"
+        </div>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">👨</div>
+          <div class="testimonial-info">
+            <h4>Alex Chen</h4>
+            <p>Content Creator</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="testimonial-card">
+        <div class="testimonial-content">
+          "The dashboard is incredibly easy to use. I can track all my links and earnings in one place. Highly recommend!"
+        </div>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">👩</div>
+          <div class="testimonial-info">
+            <h4>Sarah Johnson</h4>
+            <p>Influencer</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="testimonial-card">
+        <div class="testimonial-content">
+          "Simple, effective, and profitable. LootLinks is the best link monetization platform I've tried."
+        </div>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">👨</div>
+          <div class="testimonial-info">
+            <h4>Michael Rodriguez</h4>
+            <p>YouTuber</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="section" id="pricing">
+    <h2 class="section-title">Simple, Transparent Pricing</h2>
+    <p class="section-subtitle">Choose the plan that's right for you</p>
+    
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <div class="pricing-name">Free</div>
+        <div class="pricing-price">$0<span>/month</span></div>
+        <div class="pricing-description">Perfect for getting started</div>
+        <ul class="pricing-features">
+          <li>Unlimited links</li>
+          <li>Basic analytics</li>
+          <li>Email support</li>
+          <li>5% platform fee</li>
+        </ul>
+        <a href="/signup.html" class="btn btn-secondary" style="width: 100%;">Get Started</a>
+      </div>
+      
+      <div class="pricing-card featured">
+        <div class="pricing-badge">Most Popular</div>
+        <div class="pricing-name">Pro</div>
+        <div class="pricing-price">$9<span>/month</span></div>
+        <div class="pricing-description">For serious creators</div>
+        <ul class="pricing-features">
+          <li>Everything in Free</li>
+          <li>Advanced analytics</li>
+          <li>Custom domains</li>
+          <li>Priority support</li>
+          <li>Only 2% platform fee</li>
+          <li>API access</li>
+        </ul>
+        <a href="/signup.html" class="btn btn-primary" style="width: 100%;">Upgrade to Pro</a>
+      </div>
+      
+      <div class="pricing-card">
+        <div class="pricing-name">Enterprise</div>
+        <div class="pricing-price">Custom</div>
+        <div class="pricing-description">For teams and agencies</div>
+        <ul class="pricing-features">
+          <li>Everything in Pro</li>
+          <li>Dedicated account manager</li>
+          <li>Custom integrations</li>
+          <li>SLA guarantee</li>
+          <li>Volume discounts</li>
+          <li>White-label options</li>
+        </ul>
+        <a href="#" class="btn btn-secondary" style="width: 100%;">Contact Sales</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="section">
+    <h2 class="section-title">Frequently Asked Questions</h2>
+    <p class="section-subtitle">Everything you need to know about LootLinks</p>
+    
+    <div class="faq-container">
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          How does LootLinks work?
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            LootLinks allows you to create gated links that require visitors to view sponsor content before accessing your destination URL. You simply create a link in your dashboard, choose how many sponsor views are required (1-5), and share the link with your audience. When someone clicks your link, they'll view the sponsor content, and you earn revenue for each view.
+          </div>
+        </div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          How much can I earn?
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            Earnings vary based on your traffic and engagement. On average, creators earn $0.01 per sponsor view. With enough traffic, this can add up quickly! Our top creators earn over $1,000 per month.
+          </div>
+        </div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Is there a free plan?
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            Yes! Our free plan includes unlimited links and basic analytics. You can upgrade to Pro at any time to access advanced features like custom domains and lower platform fees.
+          </div>
+        </div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          What payment methods do you accept?
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            We accept all major credit cards, debit cards, and PayPal. For Enterprise plans, we also offer invoice billing.
+          </div>
+        </div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          How do I get paid?
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            Payments are processed monthly via PayPal or bank transfer. You need a minimum balance of $10 to request a payout. Payments are typically processed within 3-5 business days.
+          </div>
+        </div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Can I use LootLinks on multiple websites?
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            Absolutely! You can create and share LootLinks anywhere - your website, blog, social media, email newsletters, and more. There are no restrictions on where you can use your links.
+          </div>
+        </div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          What kind of analytics do you provide?
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            Our dashboard provides detailed analytics including total views, conversion rates, earnings per link, geographic data, and more. Pro users get access to advanced analytics with custom date ranges and export capabilities.
+          </div>
+        </div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          Is there a limit on how many links I can create?
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            No! All plans include unlimited link creation. Create as many gated links as you need for your content.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA Section -->
+  <section class="section">
+    <div class="cta-final">
+      <h2>Ready to Start Earning?</h2>
+      <p>Sign up now and create your first monetized link in minutes. No credit card required.</p>
+      <a href="/signup.html" class="btn btn-primary btn-large">Get Started Free</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-grid">
+        <div class="footer-column">
+          <h4>Product</h4>
+          <div class="footer-links">
+            <a href="/features.html" class="footer-link">Features</a>
+            <a href="/pricing.html" class="footer-link">Pricing</a>
+            <a href="/creator.html" class="footer-link">Dashboard</a>
+            <a href="#" class="footer-link">API</a>
+          </div>
+        </div>
+
+        <div class="footer-column">
+          <h4>Resources</h4>
+          <div class="footer-links">
+            <a href="#" class="footer-link">Documentation</a>
+            <a href="#" class="footer-link">Blog</a>
+            <a href="#" class="footer-link">Help Center</a>
+            <a href="#" class="footer-link">Status</a>
+          </div>
+        </div>
+
+        <div class="footer-column">
+          <h4>Company</h4>
+          <div class="footer-links">
+            <a href="#" class="footer-link">About</a>
+            <a href="#" class="footer-link">Careers</a>
+            <a href="#" class="footer-link">Contact</a>
+            <a href="#" class="footer-link">Privacy</a>
+          </div>
+        </div>
+
+        <div class="footer-column">
+          <h4>Connect</h4>
+          <div class="footer-links">
+            <a href="#" class="footer-link">Twitter</a>
+            <a href="#" class="footer-link">GitHub</a>
+            <a href="#" class="footer-link">Discord</a>
+            <a href="#" class="footer-link">LinkedIn</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-copyright">
+          &copy; 2026 LootLinks. All rights reserved.
+        </div>
+        <div class="footer-legal">
+          <a href="#">Terms of Service</a>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Cookie Policy</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('active');
+    }
+
+    function toggleFaq(element) {
+      const faqItem = element.parentElement;
+      const isActive = faqItem.classList.contains('active');
+      
+      // Close all FAQ items
+      document.querySelectorAll('.faq-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      
+      // Open clicked item if it wasn't already active
+      if (!isActive) {
+        faqItem.classList.add('active');
+      }
+    }
+  </script>
 </body>
 </html>
