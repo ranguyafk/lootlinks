@@ -674,9 +674,10 @@ app.get('/l/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'gate.html'));
 });
 
-// Serve creator page at /creator (legacy route for backward compatibility)
+// Redirect /creator to /creator.html (legacy route for backward compatibility)
+// This ensures template variable injection happens
 app.get('/creator', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'creator.html'));
+  res.redirect('/creator.html');
 });
 
 // Health check
