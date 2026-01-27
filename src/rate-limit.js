@@ -1,7 +1,14 @@
 // Rate Limiting System for LootLinks
 // Adapted from v0-file-upload-website for Express.js
 
-const db = require('./db');
+const {
+  db,
+  getRateLimitRecord,
+  createRateLimitRecord,
+  incrementRateLimitRecord,
+  deleteRateLimitRecords,
+  deleteOldRateLimitRecords
+} = require('./db');
 
 // Rate limit configurations
 const RATE_LIMITS = {
@@ -37,13 +44,13 @@ function checkRateLimit(identifier, action) {
   const windowStart = new Date(now - windowMs);
 
   // Use a transaction to handle race conditions
-  const result = db.transaction(() => {
+  const rateLimitTransaction = db.transaction(() => {
     // Get or create rate limit record
-    let record = db.getRateLimitRecord(identifier, action, windowStart);
+    let record = getRateLimitRecord(identifier, action, windowStart);
     
     if (!record) {
       // No record exists or expired, create one
-      db.createRateLimitRecord(identifier, action);
+      createRateLimitRecord(identifier, action);
       return {
         allowed: true,
         remaining: config.maxAttempts - 1,
@@ -62,14 +69,16 @@ function checkRateLimit(identifier, action) {
     }
 
     // Increment the counter
-    db.incrementRateLimitRecord(record.id);
+    incrementRateLimitRecord(record.id);
 
     return {
       allowed: true,
       remaining: config.maxAttempts - (record.count + 1),
       resetAt: new Date(new Date(record.window_start).getTime() + windowMs)
     };
-  })();
+  });
+
+  const result = rateLimitTransaction();
 
   return result;
 }
@@ -80,7 +89,7 @@ function checkRateLimit(identifier, action) {
  * @param {string} action - The action to reset
  */
 function resetRateLimit(identifier, action) {
-  db.deleteRateLimitRecords(identifier, action);
+  deleteRateLimitRecords(identifier, action);
 }
 
 /**
@@ -91,7 +100,7 @@ function cleanupOldRecords() {
   const maxAge = Math.max(...Object.values(RATE_LIMITS).map(c => c.windowMinutes));
   const cutoffTime = new Date(Date.now() - (maxAge * 2 * 60 * 1000)); // 2x max window
   
-  db.deleteOldRateLimitRecords(cutoffTime);
+  deleteOldRateLimitRecords(cutoffTime);
 }
 
 /**

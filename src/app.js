@@ -41,12 +41,13 @@ const PAYOUT_PER_AD_VIEW = parseFloat(process.env.PAYOUT_PER_AD_VIEW) || 0.01;
 const AD_VIEW_SECONDS = parseInt(process.env.AD_VIEW_SECONDS) || 5;
 const MAX_ADS_PER_LINK = parseInt(process.env.MAX_ADS_PER_LINK) || 5;
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'sid';
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+// Support both NEXT_PUBLIC_ prefix (for v0 compatibility) and legacy names
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 // Warn if Supabase is not configured
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.warn('WARNING: Supabase configuration not found. Set SUPABASE_URL and SUPABASE_ANON_KEY in .env for Supabase auth to work.');
+  console.warn('WARNING: Supabase configuration not found. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env for Supabase auth to work.');
 }
 
 // Initialize database
@@ -96,36 +97,35 @@ app.use((req, res, next) => {
   next();
 });
 
+// Middleware to inject Supabase config into HTML files (must be before static files)
+app.use((req, res, next) => {
+  // Only intercept HTML file requests
+  if (req.path.endsWith('.html')) {
+    const filePath = path.join(__dirname, '..', 'public', req.path);
+    
+    fs.readFile(filePath, 'utf8', (err, content) => {
+      if (err) {
+        return next(); // Let static middleware handle 404
+      }
+      
+      // Replace placeholders with actual values
+      // Support both {{SUPABASE_URL}} and {{NEXT_PUBLIC_SUPABASE_URL}} placeholders
+      let modifiedContent = content
+        .replace(/\{\{SUPABASE_URL\}\}/g, SUPABASE_URL)
+        .replace(/\{\{SUPABASE_ANON_KEY\}\}/g, SUPABASE_ANON_KEY)
+        .replace(/\{\{NEXT_PUBLIC_SUPABASE_URL\}\}/g, SUPABASE_URL)
+        .replace(/\{\{NEXT_PUBLIC_SUPABASE_ANON_KEY\}\}/g, SUPABASE_ANON_KEY);
+      
+      res.setHeader('Content-Type', 'text/html');
+      res.send(modifiedContent);
+    });
+  } else {
+    next();
+  }
+});
+
 // Static files
 app.use(express.static(path.join(__dirname, '..', 'public')));
-
-// Middleware to inject Supabase config into HTML files
-app.use((req, res, next) => {
-  const originalSend = res.sendFile;
-  
-  res.sendFile = function(filePath, options, callback) {
-    // Only process HTML files
-    if (filePath && filePath.endsWith('.html')) {
-      fs.readFile(filePath, 'utf8', (err, content) => {
-        if (err) {
-          return originalSend.call(this, filePath, options, callback);
-        }
-        
-        // Replace placeholders with actual values
-        let modifiedContent = content
-          .replace(/\{\{SUPABASE_URL\}\}/g, SUPABASE_URL)
-          .replace(/\{\{SUPABASE_ANON_KEY\}\}/g, SUPABASE_ANON_KEY);
-        
-        res.setHeader('Content-Type', 'text/html');
-        res.send(modifiedContent);
-      });
-    } else {
-      originalSend.call(this, filePath, options, callback);
-    }
-  };
-  
-  next();
-});
 
 // ============================================================================
 // Authentication API Routes
