@@ -28,8 +28,13 @@ const {
   createOrUpdateCreatorBySupabaseId,
   getLinksByUserId,
   updateLink,
-  deleteLink
+  deleteLink,
+  createProfile,
+  getProfileById,
+  getProfileByEmail
 } = require('./db');
+
+const { checkRateLimit, resetRateLimit, RATE_LIMITS } = require('./rate-limit');
 
 const app = express();
 const PAYOUT_PER_AD_VIEW = parseFloat(process.env.PAYOUT_PER_AD_VIEW) || 0.01;
@@ -125,6 +130,64 @@ app.use((req, res, next) => {
 // ============================================================================
 // Authentication API Routes
 // ============================================================================
+
+// POST /api/auth/check-rate-limit - Check if action is rate limited
+app.post('/api/auth/check-rate-limit', (req, res) => {
+  try {
+    const { action } = req.body;
+    
+    if (!action || !RATE_LIMITS[action]) {
+      return res.status(400).json({ error: 'Invalid action' });
+    }
+    
+    // Extract IP with proxy header validation
+    let identifier = req.ip || req.connection.remoteAddress;
+    const forwardedFor = req.headers['x-forwarded-for'];
+    if (forwardedFor) {
+      const ips = forwardedFor.split(',').map(ip => ip.trim());
+      if (ips.length > 0 && ips[0]) {
+        identifier = ips[0];
+      }
+    }
+    
+    const result = checkRateLimit(identifier, action);
+    
+    res.json({
+      allowed: result.allowed,
+      remaining: result.remaining,
+      resetAt: result.resetAt,
+      limit: RATE_LIMITS[action].maxAttempts
+    });
+  } catch (error) {
+    console.error('Rate limit check error:', error);
+    res.status(500).json({ error: 'Failed to check rate limit' });
+  }
+});
+
+// POST /api/auth/create-profile - Create user profile after signup
+app.post('/api/auth/create-profile', async (req, res) => {
+  try {
+    const { userId, email } = req.body;
+    
+    if (!userId || !email) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Check if profile already exists
+    const existing = getProfileById(userId);
+    if (existing) {
+      return res.json({ success: true, profile: existing });
+    }
+    
+    // Create new profile
+    const profile = createProfile(userId, email);
+    
+    res.json({ success: true, profile });
+  } catch (error) {
+    console.error('Profile creation error:', error);
+    res.status(500).json({ error: 'Failed to create profile' });
+  }
+});
 
 // POST /api/auth/session - Bind Supabase JWT to backend session
 app.post('/api/auth/session', async (req, res) => {

@@ -62,7 +62,7 @@
 
         <form id="loginForm" class="creator-form">
           <div class="form-group">
-            <label for="email">Email Address</label>
+            <label for="email">📧 Email Address</label>
             <input 
               type="email" 
               id="email" 
@@ -74,7 +74,7 @@
           </div>
 
           <div class="form-group">
-            <label for="password">Password</label>
+            <label for="password">🔒 Password</label>
             <input 
               type="password" 
               id="password" 
@@ -86,7 +86,8 @@
           </div>
 
           <button type="submit" class="btn btn-primary" style="width: 100%;" id="loginBtn">
-            Login
+            <span id="loginBtnText">Login</span>
+            <span id="loginBtnLoader" style="display: none;">⏳ Logging in...</span>
           </button>
         </form>
 
@@ -184,6 +185,8 @@
       const loginForm = document.getElementById('loginForm');
       const errorMessage = document.getElementById('errorMessage');
       const loginBtn = document.getElementById('loginBtn');
+      const loginBtnText = document.getElementById('loginBtnText');
+      const loginBtnLoader = document.getElementById('loginBtnLoader');
       
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -191,7 +194,8 @@
         // Clear previous errors
         errorMessage.style.display = 'none';
         loginBtn.disabled = true;
-        loginBtn.textContent = 'Logging in...';
+        loginBtnText.style.display = 'none';
+        loginBtnLoader.style.display = 'inline';
         
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
@@ -206,13 +210,20 @@
             errorMessage.textContent = result.error || 'Login failed. Please try again.';
             errorMessage.style.display = 'block';
             loginBtn.disabled = false;
-            loginBtn.textContent = 'Login';
+            loginBtnText.style.display = 'inline';
+            loginBtnLoader.style.display = 'none';
           }
         } catch (error) {
           console.error('Login error:', error);
           errorMessage.textContent = 'An unexpected error occurred. Please try again.';
           errorMessage.style.display = 'block';
-</footer>
+          loginBtn.disabled = false;
+          loginBtnText.style.display = 'inline';
+          loginBtnLoader.style.display = 'none';
+        }
+      });
+    });
+  </script>
 
   <script src="/js/common.js"></script>
 </body>

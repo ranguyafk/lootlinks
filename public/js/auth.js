@@ -6,6 +6,38 @@
 
 let supabaseClient = null;
 
+// Rate limiting helper
+async function checkRateLimit(action) {
+  try {
+    const response = await fetch('/api/auth/check-rate-limit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action })
+    });
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Rate limit check error:', error);
+    // Allow the action if rate limit check fails
+    return { allowed: true };
+  }
+}
+
+// Honeypot validation
+function validateHoneypot(honeypotValue) {
+  // Honeypot should be empty (bots will fill it)
+  return !honeypotValue || honeypotValue === '';
+}
+
+// Password validation
+function validatePassword(password) {
+  if (!password || password.length < 8) {
+    return { valid: false, error: 'Password must be at least 8 characters long' };
+  }
+  return { valid: true };
+}
+
 // Initialize Supabase client
 function initSupabase() {
   // Get Supabase config from window (set in HTML)
@@ -95,7 +127,28 @@ async function bindSessionToBackend() {
 }
 
 // Sign up with email and password
-async function signUpWithEmail(email, password) {
+async function signUpWithEmail(email, password, honeypotValue = '') {
+  // Check honeypot
+  if (!validateHoneypot(honeypotValue)) {
+    return { success: false, error: 'Invalid form submission' };
+  }
+  
+  // Validate password
+  const passwordValidation = validatePassword(password);
+  if (!passwordValidation.valid) {
+    return { success: false, error: passwordValidation.error };
+  }
+  
+  // Check rate limit
+  const rateLimit = await checkRateLimit('signup');
+  if (!rateLimit.allowed) {
+    const minutes = Math.ceil((new Date(rateLimit.resetAt) - new Date()) / 60000);
+    return { 
+      success: false, 
+      error: `Too many signup attempts. Please try again in ${minutes} minute${minutes !== 1 ? 's' : ''}.` 
+    };
+  }
+  
   if (!supabaseClient) {
     supabaseClient = initSupabase();
   }
@@ -113,7 +166,14 @@ async function signUpWithEmail(email, password) {
     });
     
     if (error) {
-      return { success: false, error: error.message };
+      // Provide more user-friendly error messages
+      let errorMessage = error.message;
+      if (errorMessage.includes('already registered')) {
+        errorMessage = 'This email is already registered. Please login instead.';
+      } else if (errorMessage.includes('password')) {
+        errorMessage = 'Password must be at least 8 characters long.';
+      }
+      return { success: false, error: errorMessage };
     }
     
     // Bind session to backend
@@ -158,6 +218,16 @@ async function legacySignUp(email, password) {
 
 // Sign in with email and password
 async function signInWithEmail(email, password) {
+  // Check rate limit
+  const rateLimit = await checkRateLimit('login');
+  if (!rateLimit.allowed) {
+    const minutes = Math.ceil((new Date(rateLimit.resetAt) - new Date()) / 60000);
+    return { 
+      success: false, 
+      error: `Too many login attempts. Please try again in ${minutes} minute${minutes !== 1 ? 's' : ''}.` 
+    };
+  }
+  
   if (!supabaseClient) {
     supabaseClient = initSupabase();
   }
@@ -175,7 +245,14 @@ async function signInWithEmail(email, password) {
     });
     
     if (error) {
-      return { success: false, error: error.message };
+      // Provide more user-friendly error messages
+      let errorMessage = error.message;
+      if (errorMessage.includes('Invalid login credentials')) {
+        errorMessage = 'Invalid email or password. Please try again.';
+      } else if (errorMessage.includes('Email not confirmed')) {
+        errorMessage = 'Please confirm your email address before logging in.';
+      }
+      return { success: false, error: errorMessage };
     }
     
     // Bind session to backend

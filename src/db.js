@@ -72,6 +72,30 @@ function initializeDatabase() {
     )
   `);
 
+  // Rate limits table for authentication and API rate limiting
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS auth_rate_limits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      identifier TEXT NOT NULL,
+      action TEXT NOT NULL,
+      count INTEGER NOT NULL DEFAULT 1,
+      window_start DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(identifier, action)
+    )
+  `);
+
+  // Profiles table for Supabase integration
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS profiles (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      plan TEXT NOT NULL DEFAULT 'free',
+      max_links INTEGER NOT NULL DEFAULT 10,
+      max_ads_per_link INTEGER NOT NULL DEFAULT 5,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   console.log('Database initialized successfully');
 }
 
@@ -333,6 +357,67 @@ function deleteLink(slug, userId) {
   return true;
 }
 
+// Rate limiting functions
+
+function getRateLimitRecord(identifier, action, windowStart) {
+  return db.prepare(`
+    SELECT * FROM auth_rate_limits 
+    WHERE identifier = ? AND action = ? AND window_start >= ?
+  `).get(identifier, action, windowStart.toISOString());
+}
+
+function createRateLimitRecord(identifier, action) {
+  // Use INSERT OR IGNORE to only create if not exists
+  db.prepare(`
+    INSERT OR IGNORE INTO auth_rate_limits (identifier, action, count, window_start)
+    VALUES (?, ?, 1, CURRENT_TIMESTAMP)
+  `).run(identifier, action);
+}
+
+function incrementRateLimitRecord(id) {
+  db.prepare(`
+    UPDATE auth_rate_limits 
+    SET count = count + 1 
+    WHERE id = ?
+  `).run(id);
+}
+
+function deleteRateLimitRecords(identifier, action) {
+  db.prepare(`
+    DELETE FROM auth_rate_limits 
+    WHERE identifier = ? AND action = ?
+  `).run(identifier, action);
+}
+
+function deleteOldRateLimitRecords(cutoffTime) {
+  db.prepare(`
+    DELETE FROM auth_rate_limits 
+    WHERE window_start < ?
+  `).run(cutoffTime.toISOString());
+}
+
+// Profile functions for Supabase integration
+
+function createProfile(id, email, plan = 'free') {
+  const maxLinks = plan === 'free' ? 10 : plan === 'pro' ? 100 : 1000;
+  const maxAdsPerLink = plan === 'free' ? 5 : plan === 'pro' ? 10 : 20;
+  
+  db.prepare(`
+    INSERT INTO profiles (id, email, plan, max_links, max_ads_per_link)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(id, email, plan, maxLinks, maxAdsPerLink);
+  
+  return db.prepare('SELECT * FROM profiles WHERE id = ?').get(id);
+}
+
+function getProfileById(id) {
+  return db.prepare('SELECT * FROM profiles WHERE id = ?').get(id);
+}
+
+function getProfileByEmail(email) {
+  return db.prepare('SELECT * FROM profiles WHERE email = ?').get(email);
+}
+
 module.exports = {
   db,
   initializeDatabase,
@@ -359,5 +444,15 @@ module.exports = {
   // CRUD functions
   getLinksByUserId,
   updateLink,
-  deleteLink
+  deleteLink,
+  // Rate limiting functions
+  getRateLimitRecord,
+  createRateLimitRecord,
+  incrementRateLimitRecord,
+  deleteRateLimitRecords,
+  deleteOldRateLimitRecords,
+  // Profile functions
+  createProfile,
+  getProfileById,
+  getProfileByEmail
 };
