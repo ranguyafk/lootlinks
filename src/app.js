@@ -97,38 +97,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware to inject Supabase config into HTML files (must be before static files)
-app.use((req, res, next) => {
-  // Only intercept HTML file requests
-  if (req.path.endsWith('.html')) {
-    const filePath = path.join(__dirname, '..', 'public', req.path);
-    
-    fs.readFile(filePath, 'utf8', (err, content) => {
-      if (err) {
-        return next(); // Let static middleware handle 404
-      }
-      
-      // Replace placeholders with actual values
-      // Support both {{SUPABASE_URL}} and {{NEXT_PUBLIC_SUPABASE_URL}} placeholders
-      let modifiedContent = content
-        .replace(/\{\{SUPABASE_URL\}\}/g, SUPABASE_URL)
-        .replace(/\{\{SUPABASE_ANON_KEY\}\}/g, SUPABASE_ANON_KEY)
-        .replace(/\{\{NEXT_PUBLIC_SUPABASE_URL\}\}/g, SUPABASE_URL)
-        .replace(/\{\{NEXT_PUBLIC_SUPABASE_ANON_KEY\}\}/g, SUPABASE_ANON_KEY);
-      
-      res.setHeader('Content-Type', 'text/html');
-      res.send(modifiedContent);
-    });
-  } else {
-    next();
-  }
-});
-
-// Static files
-app.use(express.static(path.join(__dirname, '..', 'public')));
-
 // ============================================================================
-// Authentication API Routes
+// Authentication API Routes (must be before static files to prevent conflicts)
 // ============================================================================
 
 // POST /api/auth/check-rate-limit - Check if action is rate limited
@@ -342,7 +312,7 @@ app.get('/api/me', (req, res) => {
   });
 });
 
-// GET /api/auth/me - Legacy endpoint (redirects to /api/me)
+// GET /api/auth/me - Legacy endpoint (serves same data as /api/me)
 app.get('/api/auth/me', (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Not authenticated' });
@@ -651,6 +621,49 @@ app.get('/api/creator/summary', (req, res) => {
     res.status(500).json({ error: 'Failed to fetch creator summary' });
   }
 });
+
+// ============================================================================
+// API 404 Handler (must be after all API routes, before static files)
+// ============================================================================
+
+// Catch-all for API routes that don't exist - return JSON instead of HTML
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found' });
+});
+
+// ============================================================================
+// Static File Serving
+// ============================================================================
+
+// Middleware to inject Supabase config into HTML files (must be before static files)
+app.use((req, res, next) => {
+  // Only intercept HTML file requests
+  if (req.path.endsWith('.html')) {
+    const filePath = path.join(__dirname, '..', 'public', req.path);
+    
+    fs.readFile(filePath, 'utf8', (err, content) => {
+      if (err) {
+        return next(); // Let static middleware handle 404
+      }
+      
+      // Replace placeholders with actual values
+      // Support both {{SUPABASE_URL}} and {{NEXT_PUBLIC_SUPABASE_URL}} placeholders
+      let modifiedContent = content
+        .replace(/\{\{SUPABASE_URL\}\}/g, SUPABASE_URL)
+        .replace(/\{\{SUPABASE_ANON_KEY\}\}/g, SUPABASE_ANON_KEY)
+        .replace(/\{\{NEXT_PUBLIC_SUPABASE_URL\}\}/g, SUPABASE_URL)
+        .replace(/\{\{NEXT_PUBLIC_SUPABASE_ANON_KEY\}\}/g, SUPABASE_ANON_KEY);
+      
+      res.setHeader('Content-Type', 'text/html');
+      res.send(modifiedContent);
+    });
+  } else {
+    next();
+  }
+});
+
+// Static files
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // ============================================================================
 // Page Routes
