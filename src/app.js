@@ -312,7 +312,7 @@ app.get('/api/me', (req, res) => {
   });
 });
 
-// GET /api/auth/me - Legacy endpoint (redirects to /api/me)
+// GET /api/auth/me - Legacy endpoint (serves same data as /api/me)
 app.get('/api/auth/me', (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Not authenticated' });
