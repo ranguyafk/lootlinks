@@ -1,6 +1,12 @@
 # Dependencies
 node_modules/
 
+# Next.js
+.next/
+
+# Lock files (using pnpm)
+package-lock.json
+
 # Environment variables
 .env
 
