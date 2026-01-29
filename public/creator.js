@@ -10,24 +10,13 @@ async function checkAuth() {
     // Hide loading, show dashboard section initially
     document.getElementById('loadingSection').style.display = 'none';
     
-    // Check if authenticated (tries Supabase first, then backend)
+    // Check if authenticated
     const authenticated = await isAuthenticated();
     
     if (!authenticated) {
       // Redirect to login
       window.location.href = '/login.html';
       return;
-    }
-    
-    // If using Supabase, bind session to backend
-    const session = await getSupabaseSession();
-    if (session) {
-      const bindResult = await bindSessionToBackend();
-      
-      if (!bindResult.success) {
-        console.error('Session binding failed:', bindResult.error);
-        // Continue anyway - backend session might still be valid
-      }
     }
     
     // Fetch user data from backend
@@ -111,7 +100,7 @@ document.getElementById('logoutBtn').addEventListener('click', async (e) => {
   e.preventDefault();
   
   try {
-    // Sign out from Supabase
+    // Sign out
     await signOut();
   } catch (error) {
     console.error('Logout error:', error);
