@@ -78,7 +78,10 @@ app.use((req, res, next) => {
     sid = uuidv4();
     res.cookie(SESSION_COOKIE_NAME, sid, {
       httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      sameSite: 'lax',
+      path: '/',
+      secure: process.env.NODE_ENV === 'production' || req.protocol === 'https'
     });
     createSession(sid);
   } else {
