@@ -64,6 +64,12 @@ async function signUp(email, password, honeypotValue = '') {
       body: JSON.stringify({ email, password })
     });
     
+    // Check content type before parsing
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return { success: false, error: 'Server error. Please try again later.' };
+    }
+    
     const data = await response.json();
     
     if (!response.ok) {
@@ -73,7 +79,7 @@ async function signUp(email, password, honeypotValue = '') {
     return { success: true, user: data.user, session: { access_token: 'native' } };
   } catch (error) {
     console.error('Signup error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Network error. Please try again.' };
   }
 }
 
@@ -97,6 +103,12 @@ async function signIn(email, password) {
       body: JSON.stringify({ email, password })
     });
     
+    // Check content type before parsing
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return { success: false, error: 'Server error. Please try again later.' };
+    }
+    
     const data = await response.json();
     
     if (!response.ok) {
@@ -106,22 +118,27 @@ async function signIn(email, password) {
     return { success: true, user: data.user, session: { access_token: 'native' } };
   } catch (error) {
     console.error('Login error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Network error. Please try again.' };
   }
 }
 
 // Sign out
 async function signOut() {
   try {
-    await fetch('/api/auth/logout', {
+    const response = await fetch('/api/auth/logout', {
       method: 'POST',
       credentials: 'same-origin'
     });
     
+    if (!response.ok) {
+      console.error('Logout request failed:', response.status);
+      return { success: false, error: 'Failed to logout' };
+    }
+    
     return { success: true };
   } catch (error) {
     console.error('Logout error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Network error' };
   }
 }
 

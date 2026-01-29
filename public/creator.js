@@ -100,7 +100,7 @@ document.getElementById('logoutBtn').addEventListener('click', async (e) => {
   e.preventDefault();
   
   try {
-    // Sign out from Supabase
+    // Sign out
     await signOut();
   } catch (error) {
     console.error('Logout error:', error);
