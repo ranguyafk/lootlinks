@@ -75,6 +75,18 @@
       }
     }
     
+    /* Respect reduced motion preferences */
+    @media (prefers-reduced-motion: reduce) {
+      .hero-badge {
+        animation: none;
+      }
+      .fade-in {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+    }
+    
     .trust-badges {
       display: flex;
       gap: 2rem;
@@ -816,10 +828,27 @@
     // Counter Animation
     function animateCounter(element) {
       const target = parseInt(element.getAttribute('data-count'));
+      
+      // Validate parsed number
+      if (isNaN(target) || target < 0) {
+        console.error('Invalid data-count attribute:', element.getAttribute('data-count'));
+        return;
+      }
+      
       const prefix = element.getAttribute('data-prefix') || '';
       const duration = 2000;
       const increment = target / (duration / 16);
       let current = 0;
+      
+      // Check for reduced motion preference
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      
+      if (prefersReducedMotion) {
+        // Skip animation, set final value immediately
+        const formatted = target.toLocaleString();
+        element.textContent = prefix + formatted + '+';
+        return;
+      }
       
       const timer = setInterval(() => {
         current += increment;
@@ -844,6 +873,8 @@
         if (entry.isIntersecting && !entry.target.classList.contains('animated')) {
           entry.target.classList.add('animated');
           animateCounter(entry.target);
+          // Unobserve after animation starts
+          counterObserver.unobserve(entry.target);
         }
       });
     }, observerOptions);
@@ -858,6 +889,8 @@
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('fade-in-visible');
+          // Unobserve after fade-in is triggered
+          fadeObserver.unobserve(entry.target);
         }
       });
     }, { threshold: 0.1 });
