@@ -1,27 +1,25 @@
 {
   "name": "lootlinks",
   "version": "1.0.0",
-  "description": "A minimal MVP of a work.ink-style link gate with ad-view requirements",
-  "main": "src/index.js",
+  "description": "Monetize your links with ad-gated content",
+  "private": true,
   "scripts": {
-    "start": "node src/index.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
-  "keywords": [
-    "link-gate",
-    "monetization",
-    "ad-views"
-  ],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
-    "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^9.2.2",
-    "cookie-parser": "^1.4.6",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "jose": "^5.2.0",
-    "morgan": "^1.10.0",
-    "uuid": "^9.0.1"
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.49.1",
+    "next": "^15.2.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
+    "typescript": "^5.7.3"
   }
 }
