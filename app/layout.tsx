@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
 import { Toaster } from "sonner"
+import { GlobalNav } from "@/components/navigation/global-nav"
 import "./globals.css"
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
 export const metadata: Metadata = {
   title: "LootLinks - Monetize Your Links",
@@ -11,7 +9,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#3B82F6",
+  themeColor: "#FFD500",
 }
 
 export default function RootLayout({
@@ -21,8 +19,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased`}>
-        {children}
+      <body className="font-sans antialiased">
+        <GlobalNav />
+        <main className="pt-16">
+          {children}
+        </main>
         <Toaster position="top-right" richColors />
       </body>
     </html>
