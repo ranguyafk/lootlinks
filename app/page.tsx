@@ -190,7 +190,7 @@ export default function HomePage() {
 
             {/* Pro Plan */}
             <Card className="border-2 border-primary shadow-xl scale-105 relative">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium" aria-label="Most popular plan">
                 Most Popular
               </div>
               <CardHeader className="text-center pb-8 pt-10">

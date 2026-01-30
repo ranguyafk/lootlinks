@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import {
   Dialog,
@@ -51,7 +51,7 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
   const [adsRequired, setAdsRequired] = useState([3])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -90,7 +90,12 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
       .single()
 
     if (insertError) {
-      setError(insertError.message)
+      // Handle unique constraint violation for slug
+      if (insertError.code === '23505') {
+        setError("Failed to generate unique link. Please try again.")
+      } else {
+        setError(insertError.message)
+      }
       setLoading(false)
       return
     }

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { User } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import { Link2, Menu, X } from "lucide-react"
 export function GlobalNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     // Get initial user
@@ -24,7 +24,7 @@ export function GlobalNav() {
     })
 
     return () => subscription.unsubscribe()
-  }, [supabase.auth])
+  }, [supabase])
 
   const navLinks = [
     { href: "/", label: "Home" },
