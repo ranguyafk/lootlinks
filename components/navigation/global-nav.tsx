@@ -1,12 +1,30 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { User } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Link2, Menu, X } from "lucide-react"
 
 export function GlobalNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    // Get initial user
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user)
+    })
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [supabase.auth])
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -38,15 +56,26 @@ export function GlobalNav() {
             ))}
           </div>
 
-          {/* Desktop Auth Buttons */}
-          <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" asChild className="hover:text-primary">
-              <Link href="/auth/login">Login</Link>
-            </Button>
-            <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link href="/auth/sign-up">Sign Up</Link>
-            </Button>
-          </div>
+          {/* Desktop Auth Buttons - Only show if user is not logged in */}
+          {!user && (
+            <div className="hidden md:flex items-center gap-4">
+              <Button variant="ghost" asChild className="hover:text-primary">
+                <Link href="/auth/login">Login</Link>
+              </Button>
+              <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Link href="/auth/sign-up">Sign Up</Link>
+              </Button>
+            </div>
+          )}
+
+          {/* Show Dashboard button if user is logged in */}
+          {user && (
+            <div className="hidden md:flex items-center gap-4">
+              <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Link href="/dashboard">Go to Dashboard</Link>
+              </Button>
+            </div>
+          )}
 
           {/* Mobile Menu Button */}
           <button
@@ -72,14 +101,25 @@ export function GlobalNav() {
                   {link.label}
                 </Link>
               ))}
-              <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                <Button variant="ghost" asChild className="w-full hover:text-primary">
-                  <Link href="/auth/login">Login</Link>
-                </Button>
-                <Button asChild className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                  <Link href="/auth/sign-up">Sign Up</Link>
-                </Button>
-              </div>
+              {/* Mobile Auth Buttons - Only show if user is not logged in */}
+              {!user && (
+                <div className="flex flex-col gap-2 pt-4 border-t border-border">
+                  <Button variant="ghost" asChild className="w-full hover:text-primary">
+                    <Link href="/auth/login">Login</Link>
+                  </Button>
+                  <Button asChild className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Link href="/auth/sign-up">Sign Up</Link>
+                  </Button>
+                </div>
+              )}
+              {/* Show Dashboard button if user is logged in */}
+              {user && (
+                <div className="flex flex-col gap-2 pt-4 border-t border-border">
+                  <Button asChild className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Link href="/dashboard">Go to Dashboard</Link>
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}
