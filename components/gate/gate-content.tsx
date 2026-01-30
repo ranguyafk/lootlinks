@@ -10,7 +10,7 @@ import { Link2, ExternalLink, CheckCircle, Play, Loader2 } from "lucide-react"
 interface Link {
   id: string
   slug: string
-  destination_url: string
+  dest_url: string
   title: string | null
   ads_required: number
   views: number
@@ -64,7 +64,7 @@ export function GateContent({ link }: GateContentProps) {
 
   const handleRedirect = () => {
     setRedirecting(true)
-    window.location.href = link.destination_url
+    window.location.href = link.dest_url
   }
 
   if (unlocked) {

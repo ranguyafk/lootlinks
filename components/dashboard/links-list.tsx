@@ -12,7 +12,7 @@ import { toast } from "sonner"
 interface Link {
   id: string
   slug: string
-  destination_url: string
+  dest_url: string
   title: string | null
   ads_required: number
   views: number
@@ -103,7 +103,7 @@ export function LinksList({ links, onDelete, onToggle }: LinksListProps) {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground truncate mb-2">
-                  {link.destination_url}
+                  {link.dest_url}
                 </p>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">

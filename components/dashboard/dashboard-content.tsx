@@ -10,7 +10,7 @@ import { StatsCards } from "./stats-cards"
 interface Link {
   id: string
   slug: string
-  destination_url: string
+  dest_url: string
   title: string | null
   ads_required: number
   views: number

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import {
   Dialog,
@@ -21,7 +21,7 @@ import { toast } from "sonner"
 interface Link {
   id: string
   slug: string
-  destination_url: string
+  dest_url: string
   title: string | null
   ads_required: number
   views: number
@@ -51,7 +51,7 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
   const [adsRequired, setAdsRequired] = useState([3])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,13 +67,22 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
       return
     }
 
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setError("You must be logged in to create a link")
+      setLoading(false)
+      return
+    }
+
     const slug = generateSlug()
 
     const { data, error: insertError } = await supabase
       .from("links")
       .insert({
+        user_id: user.id,
         slug,
-        destination_url: destinationUrl,
+        dest_url: destinationUrl,
         title: title || null,
         ads_required: adsRequired[0],
       })
@@ -81,7 +90,12 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
       .single()
 
     if (insertError) {
-      setError(insertError.message)
+      // Handle unique constraint violation for slug
+      if (insertError.code === '23505') {
+        setError("Failed to generate unique link. Please try again.")
+      } else {
+        setError(insertError.message)
+      }
       setLoading(false)
       return
     }
