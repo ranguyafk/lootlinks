@@ -21,7 +21,7 @@ import { toast } from "sonner"
 interface Link {
   id: string
   slug: string
-  destination_url: string
+  dest_url: string
   title: string | null
   ads_required: number
   views: number
@@ -67,13 +67,22 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
       return
     }
 
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setError("You must be logged in to create a link")
+      setLoading(false)
+      return
+    }
+
     const slug = generateSlug()
 
     const { data, error: insertError } = await supabase
       .from("links")
       .insert({
+        user_id: user.id,
         slug,
-        destination_url: destinationUrl,
+        dest_url: destinationUrl,
         title: title || null,
         ads_required: adsRequired[0],
       })
