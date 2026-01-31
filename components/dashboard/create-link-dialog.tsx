@@ -93,8 +93,14 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
       // Handle unique constraint violation for slug
       if (insertError.code === '23505') {
         setError("Failed to generate unique link. Please try again.")
+      } else if (insertError.code === '42703') {
+        // Column does not exist error
+        setError("Database schema error: Missing required columns. Please ensure all database migrations have been run.")
+      } else if (insertError.message.includes('column') || insertError.message.includes('does not exist')) {
+        // General column-related errors
+        setError("Database schema error: " + insertError.message + ". Please check that all database migrations have been applied.")
       } else {
-        setError(insertError.message)
+        setError("Failed to create link: " + insertError.message)
       }
       setLoading(false)
       return
