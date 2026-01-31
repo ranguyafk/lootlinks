@@ -95,7 +95,7 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
         setError("Failed to generate unique link. Please try again.")
       } else if (insertError.code === '42703') {
         // Column does not exist error - PostgreSQL error code for undefined column
-        setError("Database configuration error: The database schema appears to be incomplete. Please contact support or check that all database migrations have been applied.")
+        setError("Database setup is incomplete. Please contact support.")
       } else {
         // Generic error with some context
         setError("Failed to create link. Please try again or contact support if the problem persists.")
