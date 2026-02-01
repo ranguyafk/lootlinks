@@ -60,7 +60,7 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
 
     const isDev = process.env.NODE_ENV === 'development'
 
-    // Validate URL
+    // STEP 1: Validate URL
     try {
       new URL(destinationUrl)
     } catch {
@@ -72,83 +72,115 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
       return
     }
 
-    // Get current user
+    // STEP 2: Check authentication BEFORE attempting insert
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    // Log user authentication status (only in development)
+    if (userError || !user) {
+      if (isDev) {
+        console.error("[CreateLink] Authentication error:", userError)
+      }
+      setError("You must be logged in to create a link. Please log out and log in again.")
+      setLoading(false)
+      return
+    }
+
     if (isDev) {
-      console.log("[CreateLink] User authentication check:", {
-        authenticated: !!user,
-        userId: user?.id,
-        userError: userError?.message
+      console.log("[CreateLink] User authenticated:", {
+        userId: user.id,
+        email: user.email
       })
     }
 
-    if (!user) {
+    // STEP 3: Test Supabase connection first
+    const { error: connectionError } = await supabase.from("links").select("id").limit(1)
+    if (connectionError) {
       if (isDev) {
-        console.error("[CreateLink] User not authenticated")
+        console.error("[CreateLink] Connection test failed:", connectionError)
       }
-      setError("You must be logged in to create a link")
+      setError(`Cannot connect to database: ${connectionError.message}`)
       setLoading(false)
       return
     }
 
-    const slug = generateSlug()
-
-    // Prepare the payload
-    const payload = {
-      user_id: user.id,
-      slug,
-      dest_url: destinationUrl,
-      title: title || null,
-      ads_required: adsRequired[0],
-    }
-
-    // Log the exact payload being sent (only in development)
     if (isDev) {
-      console.log("[CreateLink] Inserting link with payload:", payload)
+      console.log("[CreateLink] Connection test successful")
     }
 
-    const { data, error: insertError } = await supabase
-      .from("links")
-      .insert(payload)
-      .select()
-      .single()
+    // STEP 4: Retry logic for slug collisions (up to 5 attempts)
+    let attempts = 0
+    const maxAttempts = 5
+    let insertSuccess = false
+    let data = null
+    let insertError = null
 
-    if (insertError) {
-      // Log detailed error information (only in development)
+    while (attempts < maxAttempts && !insertSuccess) {
+      attempts++
+      const slug = generateSlug()
+      
+      const payload = {
+        user_id: user.id,
+        slug,
+        dest_url: destinationUrl,
+        title: title || null,
+        ads_required: adsRequired[0],
+      }
+
       if (isDev) {
-        console.error("[CreateLink] Supabase insert error:", {
+        console.log(`[CreateLink] Attempt ${attempts}/${maxAttempts}:`, payload)
+      }
+
+      const result = await supabase
+        .from("links")
+        .insert(payload)
+        .select()
+        .single()
+
+      if (!result.error) {
+        insertSuccess = true
+        data = result.data
+      } else if (result.error.code === '23505') {
+        // Slug collision, retry with new slug
+        if (isDev) {
+          console.warn(`[CreateLink] Slug collision on attempt ${attempts}, retrying...`)
+        }
+        insertError = result.error
+        continue
+      } else {
+        // Other error, stop trying
+        insertError = result.error
+        break
+      }
+    }
+
+    // STEP 5: Handle errors with specific messages
+    if (insertError) {
+      if (isDev) {
+        console.error("[CreateLink] Insert failed after", attempts, "attempts:", {
+          code: insertError.code,
           message: insertError.message,
           details: insertError.details,
           hint: insertError.hint,
-          code: insertError.code,
-          payload: payload
         })
       }
 
-      // Handle unique constraint violation for slug
       if (insertError.code === '23505') {
-        setError("Failed to generate unique link. Please try again.")
+        setError("Failed to generate a unique link ID after multiple attempts. Please try again.")
       } else if (insertError.code === '42703') {
-        // Column does not exist error - PostgreSQL error code for undefined column
-        setError("Database configuration error. Please contact support.")
+        setError("Database schema error. Please contact support.")
       } else if (insertError.code === '42501') {
-        // Insufficient privilege error - likely RLS policy issue
-        setError("Permission denied. Please ensure you are properly authenticated.")
+        setError("Permission denied. Your account may not have permission to create links. Please contact support.")
+      } else if (insertError.code === 'PGRST301') {
+        setError("Row Level Security policy violation. Please ensure you're properly authenticated.")
       } else {
-        // Show sanitized error message, but log full details in dev
-        const userMessage = isDev 
-          ? `Failed to create link: ${insertError.message}`
-          : "Failed to create link. Please try again or contact support if the problem persists."
-        setError(userMessage)
+        setError(`Failed to create link: ${insertError.message || 'Unknown error'}. Please contact support if this persists.`)
       }
       setLoading(false)
       return
     }
 
+    // Success!
     if (isDev) {
-      console.log("[CreateLink] Link created successfully with slug:", data.slug)
+      console.log("[CreateLink] Link created successfully:", data)
     }
     toast.success("Link created successfully!")
     onLinkCreated(data)
