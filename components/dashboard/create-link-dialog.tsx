@@ -47,22 +47,20 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
     setLoading(true)
     setError(null)
 
-    // Simple URL validation
+    // Validate URL
     try {
       new URL(destinationUrl)
     } catch {
-      setError("Please enter a valid URL (e.g., https://example.com)")
+      setError("Please enter a valid URL")
       setLoading(false)
       return
     }
 
     try {
-      // Call our API route instead of direct Supabase insert
-      const response = await fetch('/api/links', {
+      // Call API route
+      const response = await fetch('/api/links/create', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: title || null,
           dest_url: destinationUrl,
@@ -73,19 +71,14 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
       const result = await response.json()
 
       if (!response.ok) {
-        // Handle error response
-        console.error('[CreateLink] API error:', result)
-        setError(result.details || result.error || 'Failed to create link')
+        setError(result.error || 'Failed to create link')
         setLoading(false)
         return
       }
 
-      // Success!
-      console.log('[CreateLink] Link created successfully:', result.data)
       toast.success("Link created successfully!")
       onLinkCreated(result.data)
       
-      // Reset form
       setTitle("")
       setDestinationUrl("")
       setAdsRequired([3])
@@ -93,8 +86,7 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
       onOpenChange(false)
 
     } catch (error: any) {
-      console.error('[CreateLink] Unexpected error:', error)
-      setError(`Failed to create link: ${error.message}`)
+      setError(error.message || 'Failed to create link')
       setLoading(false)
     }
   }

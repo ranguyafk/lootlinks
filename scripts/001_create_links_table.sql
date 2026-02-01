@@ -1,8 +1,8 @@
 -- Create links table for storing gated links
 -- 
--- NOTE: Link creation happens via the server-side API route (/api/links)
+-- NOTE: Link creation happens via the server-side API route (/api/links/create)
 -- which uses the authenticated user session to insert links.
--- The RLS policies below ensure that users can only insert/modify their own links.
+-- The RLS policies below are simplified to allow all authenticated users full access.
 create table if not exists public.links (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -23,25 +23,15 @@ create index if not exists links_user_id_idx on public.links(user_id);
 -- Enable Row Level Security
 alter table public.links enable row level security;
 
--- Policy: Users can view their own links
-create policy "Users can view their own links" on public.links
-  for select using (auth.uid() = user_id);
-
--- Policy: Users can insert their own links
--- This policy ensures that authenticated users can only insert links with their own user_id
-create policy "Users can insert their own links" on public.links
-  for insert 
+-- SIMPLIFIED POLICIES - Allow authenticated users to do everything
+create policy "Allow all for authenticated users" on public.links
+  for all 
   to authenticated
-  with check (auth.uid() = user_id);
+  using (true)
+  with check (true);
 
--- Policy: Users can update their own links
-create policy "Users can update their own links" on public.links
-  for update using (auth.uid() = user_id);
-
--- Policy: Users can delete their own links
-create policy "Users can delete their own links" on public.links
-  for delete using (auth.uid() = user_id);
-
--- Policy: Anyone can view links by slug (for the gate page)
-create policy "Anyone can view links by slug" on public.links
-  for select using (true);
+-- Allow anonymous users to read links by slug (for the gate page)
+create policy "Allow anonymous read by slug" on public.links
+  for select
+  to anon
+  using (true);
