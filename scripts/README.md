@@ -159,7 +159,7 @@ This indicates that PostgREST's schema cache is out of sync with the actual data
 - `PGRST204` is a PostgREST error (not a PostgreSQL error)
 - It means PostgREST cannot find a relation or its schema cache is outdated
 - This typically happens after schema changes when the cache hasn't been refreshed
-- The fix is always to reload the schema cache using `NOTIFY pgrst, 'reload schema';`
+- The fix is typically to reload the schema cache using `NOTIFY pgrst, 'reload schema';`
 
 **Understanding Schema Cache:**
 - PostgREST caches the database schema in memory for performance
