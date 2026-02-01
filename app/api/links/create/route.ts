@@ -127,16 +127,39 @@ export async function POST(request: NextRequest) {
             continue
           }
 
+          // Detect schema cache issues
+          const isSchemaIssue = insertError.message?.includes('schema cache') || 
+                                insertError.message?.includes('column') && insertError.message?.includes('does not exist')
+          
+          if (isSchemaIssue) {
+            console.error('[API /api/links/create] SCHEMA CACHE ISSUE DETECTED!')
+            console.error('[API /api/links/create] This usually means PostgREST schema cache is out of sync.')
+            console.error('[API /api/links/create] Solution: Run migration script 003_reload_schema_cache.sql in Supabase SQL Editor.')
+          }
+
+          // Build comprehensive error response
+          const errorResponse: any = { 
+            error: 'Database insert failed',
+            code: insertError.code,
+            hint: insertError.hint
+          }
+
+          if (isDev) {
+            errorResponse.details = insertError.message
+            errorResponse.attempted_payload = payload
+            
+            if (isSchemaIssue) {
+              errorResponse.troubleshooting = {
+                issue: 'Schema cache synchronization problem',
+                cause: 'PostgREST schema cache does not reflect current database schema',
+                solution: 'Run migration script: scripts/003_reload_schema_cache.sql',
+                documentation: 'See scripts/README.md for details on schema cache management'
+              }
+            }
+          }
+
           // Other error - return it
-          return NextResponse.json(
-            { 
-              error: 'Database insert failed', 
-              details: isDev ? insertError.message : undefined,
-              code: insertError.code,
-              hint: insertError.hint
-            },
-            { status: 500 }
-          )
+          return NextResponse.json(errorResponse, { status: 500 })
         }
 
         // Success!
