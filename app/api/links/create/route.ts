@@ -20,7 +20,9 @@ export async function POST(request: NextRequest) {
     let body
     try {
       body = await request.json()
-      console.log('[API /api/links/create] Parsed body:', body)
+      if (isDev) {
+        console.log('[API /api/links/create] Parsed body:', body)
+      }
     } catch (e) {
       console.error('[API /api/links/create] Failed to parse body:', e)
       return NextResponse.json(
@@ -74,7 +76,9 @@ export async function POST(request: NextRequest) {
       }
 
       user = authUser
-      console.log('[API /api/links/create] User authenticated:', user.id)
+      if (isDev) {
+        console.log('[API /api/links/create] User authenticated:', user.id)
+      }
     } catch (e) {
       console.error('[API /api/links/create] Failed to get user:', e)
       return NextResponse.json(
@@ -98,7 +102,9 @@ export async function POST(request: NextRequest) {
         ads_required: ads_required || 3,
       }
 
-      console.log('[API /api/links/create] Payload:', payload)
+      if (isDev) {
+        console.log('[API /api/links/create] Payload:', payload)
+      }
 
       try {
         const { data, error: insertError } = await supabase
@@ -134,7 +140,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Success!
-        console.log('[API /api/links/create] Link created successfully:', data)
+        console.log('[API /api/links/create] Link created successfully')
         return NextResponse.json({ data }, { status: 200 })
 
       } catch (e) {
@@ -155,11 +161,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('[API /api/links/create] Unexpected error:', error)
+    if (isDev) {
+      console.error('[API /api/links/create] Stack trace:', error.stack)
+    }
     return NextResponse.json(
       { 
         error: 'Internal server error', 
-        details: isDev ? error.message : undefined,
-        stack: isDev ? error.stack : undefined
+        details: isDev ? error.message : undefined
       },
       { status: 500 }
     )
