@@ -23,6 +23,13 @@ The database uses Supabase (PostgreSQL) and requires proper schema setup for the
   - Uses `add column if not exists` to safely add columns without errors if they already exist
   - **This script is safe to run multiple times**
 
+- **`003_reload_schema_cache.sql`** - Forces PostgREST schema cache reload
+  - Verifies all required columns exist in the `links` table
+  - Sends `NOTIFY pgrst, 'reload schema'` command to force cache refresh
+  - Resolves "column not found in schema cache" errors
+  - Should be run after schema changes or when experiencing cache-related errors
+  - **This script is safe to run multiple times**
+
 ## Setup Instructions
 
 ### For New Databases
@@ -53,6 +60,12 @@ If you have an existing LootLinks database that was created before the schema up
    scripts/002_add_missing_columns.sql
    ```
 
+3. Finally, reload the schema cache to ensure PostgREST recognizes all columns:
+   ```sql
+   -- In your Supabase SQL Editor, run:
+   scripts/003_reload_schema_cache.sql
+   ```
+
 ## Running Migrations in Supabase
 
 ### Using the Supabase Dashboard
@@ -76,20 +89,57 @@ supabase db execute --file scripts/001_create_links_table.sql
 # Run all migrations in order
 supabase db execute --file scripts/001_create_links_table.sql
 supabase db execute --file scripts/002_add_missing_columns.sql
+supabase db execute --file scripts/003_reload_schema_cache.sql
 ```
 
 ## Troubleshooting
+
+### Schema Cache Issues
+
+If you see errors like:
+- `500 Internal Server Error` when creating links
+- `Could not find the 'title' column of 'links' in the schema cache`
+- `Column not found in schema cache`
+
+This indicates that PostgREST's schema cache is out of sync with the actual database schema.
+
+**Solution:** 
+1. First, ensure all migrations are applied:
+   ```sql
+   -- Run in order:
+   scripts/001_create_links_table.sql
+   scripts/002_add_missing_columns.sql
+   ```
+
+2. Then force a schema cache reload:
+   ```sql
+   scripts/003_reload_schema_cache.sql
+   ```
+
+**Understanding Schema Cache:**
+- PostgREST caches the database schema in memory for performance
+- When you make schema changes (add tables, columns, etc.), the cache may not automatically update
+- The `NOTIFY pgrst, 'reload schema'` command forces PostgREST to refresh its cache
+- This is necessary after any database schema modifications
+
+**When to reload the schema cache:**
+- After running any schema migration scripts
+- After manually adding/removing columns or tables
+- When the API returns "column not found in schema cache" errors
+- After restoring from a database backup
+- When switching between different database environments
 
 ### "Column does not exist" errors
 
 If you see errors like:
 - `400 Bad Request` when creating links
-- `column "title" does not exist`
+- `column "title" does not exist` (in database, not cache)
 - `column "is_active" does not exist`
 
 **Solution:** Run the migration scripts as described above. Make sure to run them in order:
 1. First run `001_create_links_table.sql`
 2. Then run `002_add_missing_columns.sql`
+3. Finally run `003_reload_schema_cache.sql`
 
 ### "Relation already exists" errors
 
