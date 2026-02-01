@@ -71,7 +71,10 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
       const result = await response.json()
 
       if (!response.ok) {
-        setError(result.error || 'Failed to create link')
+        const errorMessage = result.error || 'Failed to create link'
+        const errorDetails = result.details ? ` (${result.details})` : ''
+        console.error('[CreateLink] API error:', result)
+        setError(errorMessage + errorDetails)
         setLoading(false)
         return
       }

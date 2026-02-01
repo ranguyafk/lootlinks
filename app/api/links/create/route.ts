@@ -1,68 +1,175 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-const SLUG_LENGTH = 8
-const MAX_SLUG_GENERATION_ATTEMPTS = 5
-
 function generateSlug(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
   let result = ""
-  for (let i = 0; i < SLUG_LENGTH; i++) {
+  for (let i = 0; i < 8; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length))
   }
   return result
 }
 
 export async function POST(request: NextRequest) {
+  const isDev = process.env.NODE_ENV === 'development'
+  
   try {
-    const supabase = await createClient()
+    console.log('[API /api/links/create] Starting request')
     
-    // Get user
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    // Step 1: Parse body
+    let body
+    try {
+      body = await request.json()
+      if (isDev) {
+        console.log('[API /api/links/create] Parsed body:', body)
+      }
+    } catch (e) {
+      console.error('[API /api/links/create] Failed to parse body:', e)
+      return NextResponse.json(
+        { error: 'Invalid request body', details: isDev ? String(e) : undefined },
+        { status: 400 }
+      )
     }
 
-    const body = await request.json()
     const { title, dest_url, ads_required } = body
 
-    // Validate URL
+    // Step 2: Validate URL
+    if (!dest_url) {
+      return NextResponse.json({ error: 'dest_url is required' }, { status: 400 })
+    }
+
     try {
       new URL(dest_url)
     } catch {
-      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 })
     }
 
-    // Try to insert with retries
-    for (let i = 0; i < MAX_SLUG_GENERATION_ATTEMPTS; i++) {
-      const slug = generateSlug()
-      
-      const { data, error } = await supabase
-        .from('links')
-        .insert({
-          user_id: user.id,
-          slug,
-          dest_url,
-          title: title || null,
-          ads_required: ads_required || 3,
-        })
-        .select()
-        .single()
+    // Step 3: Create Supabase client
+    let supabase
+    try {
+      supabase = await createClient()
+      console.log('[API /api/links/create] Supabase client created')
+    } catch (e) {
+      console.error('[API /api/links/create] Failed to create Supabase client:', e)
+      return NextResponse.json(
+        { error: 'Database connection failed', details: isDev ? String(e) : undefined },
+        { status: 500 }
+      )
+    }
 
-      if (error) {
-        if (error.code === '23505') continue // Slug collision, retry
-        console.error('Insert error:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+    // Step 4: Get authenticated user
+    let user
+    try {
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+      
+      if (authError) {
+        console.error('[API /api/links/create] Auth error:', authError)
+        return NextResponse.json(
+          { error: 'Authentication failed', details: isDev ? authError.message : undefined },
+          { status: 401 }
+        )
       }
 
-      return NextResponse.json({ data }, { status: 200 })
+      if (!authUser) {
+        console.error('[API /api/links/create] No user found')
+        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      }
+
+      user = authUser
+      if (isDev) {
+        console.log('[API /api/links/create] User authenticated:', user.id)
+      }
+    } catch (e) {
+      console.error('[API /api/links/create] Failed to get user:', e)
+      return NextResponse.json(
+        { error: 'Failed to verify authentication', details: isDev ? String(e) : undefined },
+        { status: 500 }
+      )
     }
 
-    return NextResponse.json({ error: 'Failed to create unique slug' }, { status: 500 })
+    // Step 5: Try to insert with retries
+    const maxAttempts = 5
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const slug = generateSlug()
+      
+      console.log(`[API /api/links/create] Insert attempt ${attempt}/${maxAttempts} with slug:`, slug)
+
+      const payload = {
+        user_id: user.id,
+        slug,
+        dest_url,
+        title: title || null,
+        ads_required: ads_required || 3,
+      }
+
+      if (isDev) {
+        console.log('[API /api/links/create] Payload:', payload)
+      }
+
+      try {
+        const { data, error: insertError } = await supabase
+          .from('links')
+          .insert(payload)
+          .select()
+          .single()
+
+        if (insertError) {
+          console.error('[API /api/links/create] Insert error:', {
+            code: insertError.code,
+            message: insertError.message,
+            details: insertError.details,
+            hint: insertError.hint
+          })
+
+          // Slug collision - retry
+          if (insertError.code === '23505') {
+            console.log('[API /api/links/create] Slug collision, retrying...')
+            continue
+          }
+
+          // Other error - return it
+          return NextResponse.json(
+            { 
+              error: 'Database insert failed', 
+              details: isDev ? insertError.message : undefined,
+              code: insertError.code,
+              hint: insertError.hint
+            },
+            { status: 500 }
+          )
+        }
+
+        // Success!
+        console.log('[API /api/links/create] Link created successfully')
+        return NextResponse.json({ data }, { status: 200 })
+
+      } catch (e) {
+        console.error('[API /api/links/create] Unexpected error during insert:', e)
+        return NextResponse.json(
+          { error: 'Unexpected database error', details: isDev ? String(e) : undefined },
+          { status: 500 }
+        )
+      }
+    }
+
+    // Failed after all retries
+    console.error('[API /api/links/create] Failed after', maxAttempts, 'attempts')
+    return NextResponse.json(
+      { error: 'Failed to generate unique slug after multiple attempts' },
+      { status: 500 }
+    )
 
   } catch (error: any) {
-    console.error('Unexpected error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('[API /api/links/create] Unexpected error:', error)
+    if (isDev) {
+      console.error('[API /api/links/create] Stack trace:', error.stack)
+    }
+    return NextResponse.json(
+      { 
+        error: 'Internal server error', 
+        details: isDev ? error.message : undefined
+      },
+      { status: 500 }
+    )
   }
 }
