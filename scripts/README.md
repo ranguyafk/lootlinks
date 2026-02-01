@@ -30,6 +30,24 @@ The database uses Supabase (PostgreSQL) and requires proper schema setup for the
   - Should be run after schema changes or when experiencing cache-related errors
   - **This script is safe to run multiple times**
 
+- **`004_create_reload_function.sql`** - Creates RPC function for automatic schema cache reload
+  - Defines `public.reload_schema_cache()` function that can be called via `supabase.rpc('reload_schema_cache')`
+  - Enables the API to automatically trigger schema cache reloads on PGRST204 errors
+  - Grants execute permission to authenticated role
+  - **This script is safe to run multiple times**
+
+## Quick Fix for Schema Cache Errors (PGRST204)
+
+1. Run migrations in order:
+   - scripts/001_create_links_table.sql
+   - scripts/002_add_missing_columns.sql
+   - scripts/003_reload_schema_cache.sql
+   - scripts/004_create_reload_function.sql
+
+2. The API (app/api/links/create/route.ts) automatically calls `supabase.rpc('reload_schema_cache')` when it detects a schema cache error. With `004_create_reload_function.sql` installed, the RPC will trigger PostgREST to reload its schema and the insert will be retried.
+
+3. Verify by creating a link in the dashboard. You should see a successful creation with HTTP 201.
+
 ## Setup Instructions
 
 ### For New Databases
