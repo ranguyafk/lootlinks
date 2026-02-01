@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+const SLUG_LENGTH = 8
+const MAX_SLUG_GENERATION_ATTEMPTS = 5
+
 function generateSlug(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
   let result = ""
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < SLUG_LENGTH; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length))
   }
   return result
@@ -32,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Try to insert with retries
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < MAX_SLUG_GENERATION_ATTEMPTS; i++) {
       const slug = generateSlug()
       
       const { data, error } = await supabase
