@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Generate slug helper function
+function generateSlug(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+  let result = ""
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -37,23 +47,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate slug (with retry logic)
-    const generateSlug = () => {
-      const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
-      let result = ""
-      for (let i = 0; i < 8; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length))
-      }
-      return result
-    }
-
-    let slug = generateSlug()
     let attempts = 0
     const maxAttempts = 5
 
     // Try to insert with retry on slug collision
     while (attempts < maxAttempts) {
       attempts++
+      const slug = generateSlug()
 
       const payload = {
         user_id: user.id,
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
 
       // Handle slug collision
       if (insertError.code === '23505') {
-        slug = generateSlug()
+        // Slug collision, retry with new slug in next iteration
         continue
       }
 
