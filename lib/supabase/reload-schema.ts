@@ -17,7 +17,8 @@ export async function reloadSchemaCache(): Promise<{ success: boolean; error?: s
     console.log('[ReloadSchema] Schema cache reload notification sent successfully')
     return { success: true }
   } catch (e) {
-    console.error('[ReloadSchema] Unexpected error:', e)
-    return { success: false, error: String(e) }
+    const errorMessage = e instanceof Error ? e.message : String(e)
+    console.error('[ReloadSchema] Unexpected error:', errorMessage)
+    return { success: false, error: errorMessage }
   }
 }

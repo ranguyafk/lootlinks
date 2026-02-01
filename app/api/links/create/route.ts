@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
 
     // Step 5: Try to insert with retries
     const maxAttempts = 5
+    let schemaReloadAttempted = false // Track if we've already tried auto-recovery
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const slug = generateSlug()
       
@@ -128,18 +129,20 @@ export async function POST(request: NextRequest) {
           }
 
           // Add specific handling for PGRST204 (PostgREST schema cache issue)
-          if (insertError.code === 'PGRST204') {
+          if (insertError.code === 'PGRST204' && !schemaReloadAttempted) {
             console.error('[API /api/links/create] PGRST204 ERROR - Attempting auto-recovery...')
+            schemaReloadAttempted = true // Mark that we've attempted recovery
             
             // Attempt to reload schema cache automatically
             try {
+              const SCHEMA_RELOAD_WAIT_MS = 1000 // Wait time for cache refresh
               const { error: reloadError } = await supabase.rpc('reload_schema_cache')
               
               if (!reloadError) {
                 console.log('[API /api/links/create] Schema cache reloaded, retrying insert...')
                 
                 // Wait a moment for the cache to refresh
-                await new Promise(resolve => setTimeout(resolve, 1000))
+                await new Promise(resolve => setTimeout(resolve, SCHEMA_RELOAD_WAIT_MS))
                 
                 // Retry the insert one more time
                 continue
