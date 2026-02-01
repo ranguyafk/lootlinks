@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
 
           // Detect schema cache issues
           const isSchemaIssue = insertError.message?.includes('schema cache') || 
-                                insertError.message?.includes('column') && insertError.message?.includes('does not exist')
+                                (insertError.message?.includes('column') && insertError.message?.includes('does not exist'))
           
           if (isSchemaIssue) {
             console.error('[API /api/links/create] SCHEMA CACHE ISSUE DETECTED!')
