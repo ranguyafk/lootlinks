@@ -24,8 +24,11 @@ create policy "Users can view their own links" on public.links
   for select using (auth.uid() = user_id);
 
 -- Policy: Users can insert their own links
+-- This policy ensures that authenticated users can only insert links with their own user_id
 create policy "Users can insert their own links" on public.links
-  for insert with check (auth.uid() = user_id);
+  for insert 
+  to authenticated
+  with check (auth.uid() = user_id);
 
 -- Policy: Users can update their own links
 create policy "Users can update their own links" on public.links
