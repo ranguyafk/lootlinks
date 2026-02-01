@@ -127,6 +127,25 @@ export async function POST(request: NextRequest) {
             continue
           }
 
+          // Add specific handling for PGRST204 (PostgREST schema cache issue)
+          if (insertError.code === 'PGRST204') {
+            console.error('[API /api/links/create] PGRST204 ERROR - PostgREST schema cache issue detected!')
+            console.error('[API /api/links/create] This means PostgREST cannot find the table or has an outdated schema cache.')
+            console.error('[API /api/links/create] IMMEDIATE FIX: Run this in Supabase SQL Editor: NOTIFY pgrst, \'reload schema\';')
+            
+            return NextResponse.json({
+              error: 'Database schema synchronization error',
+              code: insertError.code,
+              hint: 'PostgREST schema cache is out of sync. Run: NOTIFY pgrst, \'reload schema\'; in Supabase SQL Editor',
+              troubleshooting: {
+                issue: 'PostgREST schema cache not synchronized',
+                immediate_fix: 'Run in Supabase SQL Editor: NOTIFY pgrst, \'reload schema\';',
+                permanent_fix: 'Run migration script: scripts/003_reload_schema_cache.sql',
+                documentation: 'See scripts/README.md for details'
+              }
+            }, { status: 500 })
+          }
+
           // Detect schema cache issues
           const isSchemaIssue = insertError.message?.includes('schema cache') || 
                                 (insertError.message?.includes('column') && insertError.message?.includes('does not exist'))

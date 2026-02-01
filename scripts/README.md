@@ -66,6 +66,42 @@ If you have an existing LootLinks database that was created before the schema up
    scripts/003_reload_schema_cache.sql
    ```
 
+## Schema Cache Management
+
+### What is the PostgREST Schema Cache?
+
+PostgREST (which Supabase uses for its API) caches the database schema in memory for performance. When you make schema changes (add tables, columns, alter types, etc.), PostgREST may not automatically pick up these changes, leading to errors like:
+
+- `PGRST204` errors
+- `Could not find the 'column_name' column in the schema cache`
+- `relation "table_name" does not exist` (when the table actually exists)
+
+### When to Reload the Schema Cache
+
+You should reload the PostgREST schema cache:
+
+- ✅ After running ANY database migration that changes the schema
+- ✅ After adding or removing tables
+- ✅ After adding or removing columns
+- ✅ When you see `PGRST204` errors
+- ✅ When column or table "does not exist" errors occur despite the schema being correct
+
+### How to Reload the Schema Cache
+
+**Option 1: Using the migration script**
+```sql
+-- In your Supabase SQL Editor, run:
+scripts/003_reload_schema_cache.sql
+```
+
+**Option 2: Direct command**
+```sql
+-- In your Supabase SQL Editor, run:
+NOTIFY pgrst, 'reload schema';
+```
+
+Both methods do the same thing - they send a notification to PostgREST to refresh its schema cache.
+
 ## Running Migrations in Supabase
 
 ### Using the Supabase Dashboard
@@ -94,10 +130,11 @@ supabase db execute --file scripts/003_reload_schema_cache.sql
 
 ## Troubleshooting
 
-### Schema Cache Issues
+### PGRST204 Errors and Schema Cache Issues
 
 If you see errors like:
-- `500 Internal Server Error` when creating links
+- `500 Internal Server Error` with code `PGRST204`
+- `Database schema synchronization error`
 - `Could not find the 'title' column of 'links' in the schema cache`
 - `Column not found in schema cache`
 
@@ -115,6 +152,14 @@ This indicates that PostgREST's schema cache is out of sync with the actual data
    ```sql
    scripts/003_reload_schema_cache.sql
    ```
+
+3. Verify the fix by trying to create a link in your application
+
+**Understanding PGRST204:**
+- `PGRST204` is a PostgREST error (not a PostgreSQL error)
+- It means PostgREST cannot find a relation or its schema cache is outdated
+- This typically happens after schema changes when the cache hasn't been refreshed
+- The fix is always to reload the schema cache using `NOTIFY pgrst, 'reload schema';`
 
 **Understanding Schema Cache:**
 - PostgREST caches the database schema in memory for performance
