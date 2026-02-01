@@ -128,6 +128,38 @@ supabase db execute --file scripts/002_add_missing_columns.sql
 supabase db execute --file scripts/003_reload_schema_cache.sql
 ```
 
+## Automated Schema Cache Management
+
+### Setup (One-Time)
+
+After setting up your database, run the schema reload function installation:
+
+```sql
+-- In your Supabase SQL Editor, run:
+scripts/004_create_reload_function.sql
+```
+
+This enables automatic schema cache reload capabilities.
+
+### How It Works
+
+The application now includes automatic schema cache management:
+
+1. **Automatic Recovery**: When the API detects a schema synchronization error (PGRST204), it automatically attempts to reload the schema cache and retry the operation.
+
+2. **Manual Refresh**: Use the "Reload Schema" button in the dashboard header to manually trigger a schema cache reload if needed.
+
+3. **Fallback**: If automatic recovery fails, the error message provides clear instructions for manual intervention.
+
+### When You Still Need Manual Intervention
+
+You may still need to manually run scripts if:
+- The `reload_schema_cache()` function hasn't been installed yet (run `004_create_reload_function.sql`)
+- There are actual missing columns that need to be added via migrations
+- There are permission or RLS policy issues
+
+In these cases, follow the setup instructions above to run the appropriate migration scripts.
+
 ## Troubleshooting
 
 ### PGRST204 Errors and Schema Cache Issues

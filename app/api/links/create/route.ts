@@ -129,18 +129,37 @@ export async function POST(request: NextRequest) {
 
           // Add specific handling for PGRST204 (PostgREST schema cache issue)
           if (insertError.code === 'PGRST204') {
-            console.error('[API /api/links/create] PGRST204 ERROR - PostgREST schema cache issue detected!')
-            console.error('[API /api/links/create] This means PostgREST cannot find the table or has an outdated schema cache.')
-            console.error('[API /api/links/create] IMMEDIATE FIX: Run this in Supabase SQL Editor: NOTIFY pgrst, \'reload schema\';')
+            console.error('[API /api/links/create] PGRST204 ERROR - Attempting auto-recovery...')
             
+            // Attempt to reload schema cache automatically
+            try {
+              const { error: reloadError } = await supabase.rpc('reload_schema_cache')
+              
+              if (!reloadError) {
+                console.log('[API /api/links/create] Schema cache reloaded, retrying insert...')
+                
+                // Wait a moment for the cache to refresh
+                await new Promise(resolve => setTimeout(resolve, 1000))
+                
+                // Retry the insert one more time
+                continue
+              } else {
+                console.error('[API /api/links/create] Failed to reload schema cache:', reloadError)
+              }
+            } catch (reloadException) {
+              console.error('[API /api/links/create] Exception during schema reload:', reloadException)
+            }
+            
+            // If auto-recovery failed, return detailed error
             return NextResponse.json({
               error: 'Database schema synchronization error',
               code: insertError.code,
-              hint: 'PostgREST schema cache is out of sync. Run: NOTIFY pgrst, \'reload schema\'; in Supabase SQL Editor',
+              hint: 'Auto-recovery attempted but failed. Manual intervention required.',
               troubleshooting: {
                 issue: 'PostgREST schema cache not synchronized',
-                immediate_fix: 'Run in Supabase SQL Editor: NOTIFY pgrst, \'reload schema\';',
-                permanent_fix: 'Run migration script: scripts/003_reload_schema_cache.sql',
+                attempted_fix: 'Automatic schema cache reload attempted',
+                manual_fix: 'Run in Supabase SQL Editor: NOTIFY pgrst, \'reload schema\';',
+                permanent_fix: 'Ensure script 004_create_reload_function.sql is installed',
                 documentation: 'See scripts/README.md for details'
               }
             }, { status: 500 })
