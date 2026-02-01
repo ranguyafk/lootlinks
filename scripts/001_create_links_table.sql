@@ -1,4 +1,8 @@
 -- Create links table for storing gated links
+-- 
+-- NOTE: Link creation happens via the server-side API route (/api/links)
+-- which uses the authenticated user session to insert links.
+-- The RLS policies below ensure that users can only insert/modify their own links.
 create table if not exists public.links (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
