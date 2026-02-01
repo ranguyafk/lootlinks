@@ -45,6 +45,8 @@ function generateSlug(): string {
   return result
 }
 
+const MAX_SLUG_GENERATION_ATTEMPTS = 5 // Maximum retries for slug collision before giving up
+
 export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLinkDialogProps) {
   const [title, setTitle] = useState("")
   const [destinationUrl, setDestinationUrl] = useState("")
@@ -92,6 +94,7 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
     }
 
     // STEP 3: Test Supabase connection first
+    // This pre-flight check helps diagnose connection issues early and provides better error messages
     const { error: connectionError } = await supabase.from("links").select("id").limit(1)
     if (connectionError) {
       if (isDev) {
@@ -108,7 +111,7 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
 
     // STEP 4: Retry logic for slug collisions (up to 5 attempts)
     let attempts = 0
-    const maxAttempts = 5
+    const maxAttempts = MAX_SLUG_GENERATION_ATTEMPTS
     let insertSuccess = false
     let data = null
     let insertError = null
