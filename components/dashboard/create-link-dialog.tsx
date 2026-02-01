@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -36,163 +35,68 @@ interface CreateLinkDialogProps {
   onLinkCreated: (link: Link) => void
 }
 
-function generateSlug(): string {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
-  let result = ""
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return result
-}
-
-const MAX_SLUG_GENERATION_ATTEMPTS = 5 // Maximum retries for slug collision before giving up
-
 export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLinkDialogProps) {
   const [title, setTitle] = useState("")
   const [destinationUrl, setDestinationUrl] = useState("")
   const [adsRequired, setAdsRequired] = useState([3])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = useMemo(() => createClient(), [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
-    const isDev = process.env.NODE_ENV === 'development'
-
-    // STEP 1: Validate URL
+    // Simple URL validation
     try {
       new URL(destinationUrl)
     } catch {
-      if (isDev) {
-        console.error("[CreateLink] Invalid URL format:", destinationUrl)
-      }
-      setError("Please enter a valid URL")
+      setError("Please enter a valid URL (e.g., https://example.com)")
       setLoading(false)
       return
     }
 
-    // STEP 2: Check authentication BEFORE attempting insert
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    
-    if (userError || !user) {
-      if (isDev) {
-        console.error("[CreateLink] Authentication error:", userError)
-      }
-      setError("You must be logged in to create a link. Please log out and log in again.")
-      setLoading(false)
-      return
-    }
-
-    if (isDev) {
-      console.log("[CreateLink] User authenticated:", {
-        userId: user.id,
-        email: user.email
+    try {
+      // Call our API route instead of direct Supabase insert
+      const response = await fetch('/api/links', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: title || null,
+          dest_url: destinationUrl,
+          ads_required: adsRequired[0],
+        }),
       })
-    }
 
-    // STEP 3: Test Supabase connection first
-    // This pre-flight check helps diagnose connection issues early and provides better error messages
-    const { error: connectionError } = await supabase.from("links").select("id").limit(1)
-    if (connectionError) {
-      if (isDev) {
-        console.error("[CreateLink] Connection test failed:", connectionError)
+      const result = await response.json()
+
+      if (!response.ok) {
+        // Handle error response
+        console.error('[CreateLink] API error:', result)
+        setError(result.details || result.error || 'Failed to create link')
+        setLoading(false)
+        return
       }
-      setError(`Cannot connect to database: ${connectionError.message}`)
-      setLoading(false)
-      return
-    }
 
-    if (isDev) {
-      console.log("[CreateLink] Connection test successful")
-    }
-
-    // STEP 4: Retry logic for slug collisions (up to 5 attempts)
-    let attempts = 0
-    const maxAttempts = MAX_SLUG_GENERATION_ATTEMPTS
-    let insertSuccess = false
-    let data = null
-    let insertError = null
-
-    while (attempts < maxAttempts && !insertSuccess) {
-      attempts++
-      const slug = generateSlug()
+      // Success!
+      console.log('[CreateLink] Link created successfully:', result.data)
+      toast.success("Link created successfully!")
+      onLinkCreated(result.data)
       
-      const payload = {
-        user_id: user.id,
-        slug,
-        dest_url: destinationUrl,
-        title: title || null,
-        ads_required: adsRequired[0],
-      }
-
-      if (isDev) {
-        console.log(`[CreateLink] Attempt ${attempts}/${maxAttempts}:`, payload)
-      }
-
-      const result = await supabase
-        .from("links")
-        .insert(payload)
-        .select()
-        .single()
-
-      if (!result.error) {
-        insertSuccess = true
-        data = result.data
-      } else if (result.error.code === '23505') {
-        // Slug collision, retry with new slug
-        if (isDev) {
-          console.warn(`[CreateLink] Slug collision on attempt ${attempts}, retrying...`)
-        }
-        insertError = result.error
-        continue
-      } else {
-        // Other error, stop trying
-        insertError = result.error
-        break
-      }
-    }
-
-    // STEP 5: Handle errors with specific messages
-    if (insertError) {
-      if (isDev) {
-        console.error("[CreateLink] Insert failed after", attempts, "attempts:", {
-          code: insertError.code,
-          message: insertError.message,
-          details: insertError.details,
-          hint: insertError.hint,
-        })
-      }
-
-      if (insertError.code === '23505') {
-        setError("Failed to generate a unique link ID after multiple attempts. Please try again.")
-      } else if (insertError.code === '42703') {
-        setError("Database schema error. Please contact support.")
-      } else if (insertError.code === '42501') {
-        setError("Permission denied. Your account may not have permission to create links. Please contact support.")
-      } else if (insertError.code === 'PGRST301') {
-        setError("Row Level Security policy violation. Please ensure you're properly authenticated.")
-      } else {
-        setError(`Failed to create link: ${insertError.message || 'Unknown error'}. Please contact support if this persists.`)
-      }
+      // Reset form
+      setTitle("")
+      setDestinationUrl("")
+      setAdsRequired([3])
       setLoading(false)
-      return
-    }
+      onOpenChange(false)
 
-    // Success!
-    if (isDev) {
-      console.log("[CreateLink] Link created successfully:", data)
+    } catch (error: any) {
+      console.error('[CreateLink] Unexpected error:', error)
+      setError(`Failed to create link: ${error.message}`)
+      setLoading(false)
     }
-    toast.success("Link created successfully!")
-    onLinkCreated(data)
-    
-    // Reset form
-    setTitle("")
-    setDestinationUrl("")
-    setAdsRequired([3])
-    setLoading(false)
   }
 
   return (
