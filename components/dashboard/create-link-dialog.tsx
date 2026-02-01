@@ -93,8 +93,12 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
       // Handle unique constraint violation for slug
       if (insertError.code === '23505') {
         setError("Failed to generate unique link. Please try again.")
+      } else if (insertError.code === '42703') {
+        // Column does not exist error - PostgreSQL error code for undefined column
+        setError("Database setup is incomplete. Please contact support.")
       } else {
-        setError(insertError.message)
+        // Generic error with some context
+        setError("Failed to create link. Please try again or contact support if the problem persists.")
       }
       setLoading(false)
       return

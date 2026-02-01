@@ -4,9 +4,11 @@ create table if not exists public.links (
   user_id uuid not null references auth.users(id) on delete cascade,
   slug text unique not null,
   dest_url text not null,
+  title text,
   ads_required integer not null default 3,
   views integer not null default 0,
   completions integer not null default 0,
+  is_active boolean not null default true,
   created_at timestamp with time zone default now()
 );
 
