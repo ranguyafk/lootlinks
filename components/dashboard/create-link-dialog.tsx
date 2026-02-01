@@ -62,14 +62,24 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
     try {
       new URL(destinationUrl)
     } catch {
+      console.error("[CreateLink] Invalid URL format:", destinationUrl)
       setError("Please enter a valid URL")
       setLoading(false)
       return
     }
 
     // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    // Log user authentication status
+    console.log("[CreateLink] User authentication check:", {
+      authenticated: !!user,
+      userId: user?.id,
+      userError: userError?.message
+    })
+
     if (!user) {
+      console.error("[CreateLink] User not authenticated")
       setError("You must be logged in to create a link")
       setLoading(false)
       return
@@ -77,33 +87,52 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
 
     const slug = generateSlug()
 
+    // Prepare the payload
+    const payload = {
+      user_id: user.id,
+      slug,
+      dest_url: destinationUrl,
+      title: title || null,
+      ads_required: adsRequired[0],
+    }
+
+    // Log the exact payload being sent
+    console.log("[CreateLink] Inserting link with payload:", payload)
+
     const { data, error: insertError } = await supabase
       .from("links")
-      .insert({
-        user_id: user.id,
-        slug,
-        dest_url: destinationUrl,
-        title: title || null,
-        ads_required: adsRequired[0],
-      })
+      .insert(payload)
       .select()
       .single()
 
     if (insertError) {
+      // Log detailed error information
+      console.error("[CreateLink] Supabase insert error:", {
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
+        code: insertError.code,
+        payload: payload
+      })
+
       // Handle unique constraint violation for slug
       if (insertError.code === '23505') {
         setError("Failed to generate unique link. Please try again.")
       } else if (insertError.code === '42703') {
         // Column does not exist error - PostgreSQL error code for undefined column
-        setError("Database setup is incomplete. Please contact support.")
+        setError(`Database setup is incomplete: ${insertError.message}`)
+      } else if (insertError.code === '42501') {
+        // Insufficient privilege error - likely RLS policy issue
+        setError("Permission denied. Please ensure you are properly authenticated.")
       } else {
-        // Generic error with some context
-        setError("Failed to create link. Please try again or contact support if the problem persists.")
+        // Show actual error message from Supabase for better debugging
+        setError(`Failed to create link: ${insertError.message}`)
       }
       setLoading(false)
       return
     }
 
+    console.log("[CreateLink] Link created successfully:", data)
     toast.success("Link created successfully!")
     onLinkCreated(data)
     
