@@ -23,11 +23,10 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission to authenticated users
+-- Grant execute permission to authenticated users only
+-- Note: Anonymous users are NOT granted access to prevent potential DoS attacks
+-- via repeated schema cache reloads
 GRANT EXECUTE ON FUNCTION public.reload_schema_cache() TO authenticated;
-
--- Grant execute permission to anonymous users (needed for public access scenarios)
-GRANT EXECUTE ON FUNCTION public.reload_schema_cache() TO anon;
 
 -- Add a comment to document the function
 COMMENT ON FUNCTION public.reload_schema_cache() IS 

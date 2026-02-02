@@ -130,7 +130,8 @@ If you get permission errors when running these scripts:
 
 ## Notes
 
-- These scripts are safe to run multiple times (they use `CREATE OR REPLACE` and `ALTER ... IF EXISTS` where appropriate)
+- The `create_reload_function.sql` script is safe to run multiple times (it uses `CREATE OR REPLACE`)
+- The `alter_links_defaults.sql` script should only be run once per environment - running it multiple times may cause errors if constraints already exist
 - Always test schema changes in a development environment first
 - Back up your data before making significant schema changes
-- The `reload_schema_cache` RPC function is automatically used by `/api/links/create` for auto-recovery from PGRST204 errors
+- The `reload_schema_cache` RPC function requires authentication and is automatically used by `/api/links/create` for auto-recovery from PGRST204 errors
