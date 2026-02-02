@@ -12,6 +12,31 @@
 -- You must run this script manually in the Supabase SQL Editor.
 -- =================================================================
 
+-- =================================================================
+-- Database Functions (for atomic operations)
+-- =================================================================
+
+-- Function: Atomically increment link completion count
+-- This function ensures race-condition-free increments
+CREATE OR REPLACE FUNCTION increment_link_completion(link_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  UPDATE public.links
+  SET completions = completions + 1
+  WHERE id = link_id;
+END;
+$$;
+
+-- Grant execute permission to authenticated and anonymous users
+GRANT EXECUTE ON FUNCTION increment_link_completion(uuid) TO anon, authenticated;
+
+-- =================================================================
+-- Row Level Security Policies
+-- =================================================================
+
 -- Enable RLS on the links table
 ALTER TABLE public.links ENABLE ROW LEVEL SECURITY;
 
@@ -60,6 +85,9 @@ USING (true);
 --
 -- To verify policies:
 -- SELECT * FROM pg_policies WHERE tablename = 'links';
+--
+-- To verify the function was created:
+-- SELECT * FROM pg_proc WHERE proname = 'increment_link_completion';
 -- =================================================================
 
 -- =================================================================
@@ -70,6 +98,8 @@ USING (true);
 -- - If you want more restrictive access, you can modify or remove
 --   this policy, but note that unauthenticated users won't be able
 --   to access the gate page.
+-- - The increment_link_completion function uses SECURITY DEFINER to
+--   bypass RLS policies, allowing atomic updates without race conditions.
 -- - For more information on RLS, see:
 --   https://supabase.com/docs/guides/auth/row-level-security
 -- =================================================================

@@ -33,7 +33,19 @@ export function GateContent({ link }: GateContentProps) {
   const handleComplete = useCallback(async () => {
     setUnlocked(true)
     // Increment completion count via server-side API
-    await fetch(`/api/links/${link.id}/increment-completion`, { method: 'POST' })
+    try {
+      const response = await fetch(`/api/links/${link.id}/increment-completion`, {
+        method: 'POST'
+      })
+      if (!response.ok) {
+        console.error('Failed to increment completion:', await response.text())
+        // Note: We still unlock the link for the user since they completed the ads
+        // The missing increment can be addressed with retry logic in the future
+      }
+    } catch (error) {
+      console.error('Error incrementing completion:', error)
+      // Note: We still unlock the link for the user since they completed the ads
+    }
   }, [link.id])
 
   useEffect(() => {

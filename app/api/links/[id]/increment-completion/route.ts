@@ -9,27 +9,27 @@ export async function POST(
     const params = await context.params
     const supabase = await createClient()
 
-    // Fetch the link to ensure it exists and get current completion count
-    const { data: link, error } = await supabase
+    // First verify the link exists
+    const { data: link, error: fetchError } = await supabase
       .from('links')
-      .select('id, completions')
+      .select('id')
       .eq('id', params.id)
       .single()
 
-    if (error || !link) {
+    if (fetchError || !link) {
       return NextResponse.json({ error: 'Link not found' }, { status: 404 })
     }
 
-    // Atomically increment the completion count
-    const { error: updErr } = await supabase
-      .from('links')
-      .update({ completions: link.completions + 1 })
-      .eq('id', link.id)
+    // Use RPC for atomic increment to avoid race conditions
+    // This performs: UPDATE links SET completions = completions + 1 WHERE id = link_id
+    const { error: rpcError } = await supabase.rpc('increment_link_completion', {
+      link_id: params.id
+    })
 
-    if (updErr) {
-      console.error('[API /api/links/[id]/increment-completion] Update error:', updErr)
+    if (rpcError) {
+      console.error('[API /api/links/[id]/increment-completion] RPC error:', rpcError)
       return NextResponse.json(
-        { error: 'Failed to increment completion', details: updErr.message },
+        { error: 'Failed to increment completion', details: rpcError.message },
         { status: 500 }
       )
     }
