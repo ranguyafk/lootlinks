@@ -44,7 +44,7 @@ The database uses Supabase (PostgreSQL) and requires proper schema setup for the
    - scripts/003_reload_schema_cache.sql
    - scripts/004_create_reload_function.sql
 
-2. The API (app/api/links/create/route.ts) automatically calls `supabase.rpc('reload_schema_cache')` when it detects a schema cache error. With `004_create_reload_function.sql` installed, the RPC will trigger PostgREST to reload its schema and the insert will be retried.
+2. The API can programmatically call `supabase.rpc('reload_schema_cache')` to trigger schema cache reloads. With `004_create_reload_function.sql` installed, the RPC will trigger PostgREST to reload its schema.
 
 3. Verify by creating a link in the dashboard. You should see a successful creation with HTTP 201 (check the Network tab in browser dev tools or server logs).
 
