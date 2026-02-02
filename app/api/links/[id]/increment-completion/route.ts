@@ -31,9 +31,10 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     }
 
     return NextResponse.json({ ok: true }, { status: 200 })
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const error = e as Error
     return NextResponse.json(
-      { error: 'Internal server error', details: e.message },
+      { error: 'Internal server error', details: error.message },
       { status: 500 }
     )
   }
