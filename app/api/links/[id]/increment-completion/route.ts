@@ -35,10 +35,11 @@ export async function POST(
     }
 
     return NextResponse.json({ ok: true }, { status: 200 })
-  } catch (e: any) {
-    console.error('[API /api/links/[id]/increment-completion] Unexpected error:', e)
+  } catch (e) {
+    const error = e instanceof Error ? e : new Error(String(e))
+    console.error('[API /api/links/[id]/increment-completion] Unexpected error:', error)
     return NextResponse.json(
-      { error: 'Internal server error', details: e.message },
+      { error: 'Internal server error', details: error.message },
       { status: 500 }
     )
   }
