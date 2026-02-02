@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
 
         // Success!
         console.log('[API /api/links/create] Link created successfully')
-        return NextResponse.json({ data }, { status: 200 })
+        return NextResponse.json({ data }, { status: 201 })
 
       } catch (e) {
         console.error('[API /api/links/create] Unexpected error during insert:', e)

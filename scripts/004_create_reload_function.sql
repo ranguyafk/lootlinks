@@ -1,22 +1,19 @@
--- Create a function to reload PostgREST schema cache
--- This allows the application to programmatically trigger a schema cache reload
+-- Creates an RPC function to force PostgREST schema cache reload via supabase.rpc('reload_schema_cache')
 
 create or replace function public.reload_schema_cache()
-returns void
+returns boolean
 language plpgsql
 security definer
+set search_path = public
 as $$
 begin
-  -- Send notification to PostgREST to reload its schema cache
   perform pg_notify('pgrst', 'reload schema');
-  
-  -- Log the operation
-  raise notice 'Schema cache reload notification sent at %', now();
+  return true;
 end;
 $$;
 
--- Grant execute permission to authenticated users
+-- Allow authenticated users to call this RPC
 grant execute on function public.reload_schema_cache() to authenticated;
 
--- Grant execute permission to service role (for API routes)
-grant execute on function public.reload_schema_cache() to service_role;
+comment on function public.reload_schema_cache() is
+  'RPC to trigger PostgREST schema cache reload. Called by the API on PGRST204 errors.';
