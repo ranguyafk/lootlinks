@@ -58,7 +58,7 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
 
     try {
       // Call API route
-      const response = await fetch('/api/links/create', {
+      const response = await fetch('/api/links', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

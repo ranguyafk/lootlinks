@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -28,18 +27,14 @@ export function GateContent({ link }: GateContentProps) {
   const [countdown, setCountdown] = useState(0)
   const [unlocked, setUnlocked] = useState(false)
   const [redirecting, setRedirecting] = useState(false)
-  const supabase = createClient()
 
   const progress = (adsWatched / link.ads_required) * 100
 
   const handleComplete = useCallback(async () => {
     setUnlocked(true)
-    // Increment completion count
-    await supabase
-      .from("links")
-      .update({ completions: link.completions + 1 })
-      .eq("id", link.id)
-  }, [supabase, link.completions, link.id])
+    // Increment completion count via server-side API
+    await fetch(`/api/links/${link.id}/increment-completion`, { method: 'POST' })
+  }, [link.id])
 
   useEffect(() => {
     if (adsWatched >= link.ads_required && !unlocked) {
