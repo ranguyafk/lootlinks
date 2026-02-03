@@ -47,7 +47,7 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
     setLoading(true)
     setError(null)
 
-    // Validate URL
+    // Quick client validation
     try {
       new URL(destinationUrl)
     } catch {
@@ -57,10 +57,9 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
     }
 
     try {
-      // Call API route
-      const response = await fetch('/api/links', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title || null,
           dest_url: destinationUrl,
@@ -68,28 +67,30 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
         }),
       })
 
-      const result = await response.json()
+      const ct = response.headers.get("content-type") || ""
+      const result = ct.includes("application/json") ? await response.json() : {}
 
       if (!response.ok) {
-        const errorMessage = result.error || 'Failed to create link'
-        const errorDetails = result.details ? ` (${result.details})` : ''
-        console.error('[CreateLink] API error:', result)
-        setError(errorMessage + errorDetails)
+        const msg =
+          (result?.error as string) ||
+          (typeof result === "string" ? result : "") ||
+          "Failed to create link"
+        const details = result?.details ? ` (${String(result.details)})` : ""
+        setError(msg + details)
         setLoading(false)
         return
       }
 
       toast.success("Link created successfully!")
-      onLinkCreated(result.data)
-      
+      onLinkCreated(result.data as Link)
+
       setTitle("")
       setDestinationUrl("")
       setAdsRequired([3])
       setLoading(false)
       onOpenChange(false)
-
-    } catch (error: any) {
-      setError(error.message || 'Failed to create link')
+    } catch (err: any) {
+      setError(err?.message || "Failed to create link")
       setLoading(false)
     }
   }

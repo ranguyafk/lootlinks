@@ -1,111 +1,142 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from "next/server"
+import { CreateLinkSchema } from "@/lib/validation/link"
+import { createClient } from "@/lib/supabase/server"
 
-// Generate slug helper function
-function generateSlug(): string {
+function randomSlug(len = 8) {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
-  let result = ""
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return result
+  let out = ""
+  for (let i = 0; i < len; i++) out += chars.charAt(Math.floor(Math.random() * chars.length))
+  return out
 }
 
+const isDev = process.env.NODE_ENV !== "production"
+
 export async function POST(request: NextRequest) {
+  // Step 1: Parse JSON body safely
+  let body: unknown
   try {
-    const supabase = await createClient()
-    
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized', details: 'You must be logged in to create links' },
-        { status: 401 }
-      )
+    body = await request.json()
+  } catch (e) {
+    return NextResponse.json(
+      { error: "Invalid JSON body", code: "BAD_JSON", details: isDev ? String(e) : undefined },
+      { status: 400 }
+    )
+  }
+
+  // Step 2: Validate input
+  const parse = CreateLinkSchema.safeParse(body)
+  if (!parse.success) {
+    const first = parse.error.issues?.[0]
+    return NextResponse.json(
+      {
+        error: "Validation failed",
+        code: "VALIDATION_ERROR",
+        details: first ? `${first.path.join(".")}: ${first.message}` : undefined,
+      },
+      { status: 400 }
+    )
+  }
+  const { title, dest_url, ads_required } = parse.data
+
+  // Step 3: Supabase + auth
+  let supabase
+  try {
+    supabase = await createClient()
+  } catch (e) {
+    return NextResponse.json(
+      {
+        error: "Database initialization failed",
+        code: "DB_INIT_FAILED",
+        details: isDev ? String(e) : undefined,
+      },
+      { status: 500 }
+    )
+  }
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return NextResponse.json(
+      {
+        error: "Unauthorized",
+        code: "UNAUTHORIZED",
+        details: isDev && authError ? authError.message : undefined,
+      },
+      { status: 401 }
+    )
+  }
+
+  // Step 4: Try DB-side slug default first
+  const basePayload = {
+    user_id: user.id,
+    dest_url,
+    title,
+    ads_required,
+  }
+
+  // Attempt insert without slug — works if DB has default generate_unique_slug()
+  const firstTry = await supabase.from("links").insert(basePayload).select().single()
+
+  // If worked — done
+  if (!firstTry.error && firstTry.data) {
+    return NextResponse.json({ data: firstTry.data }, { status: 201 })
+  }
+
+  // If the failure is clearly unrelated to slug default, return it
+  const errCode = firstTry.error?.code
+  const errMsg = firstTry.error?.message || ""
+  const looksLikeSlugRequired =
+    errCode === "23502" || /slug.*null|missing.*slug/i.test(firstTry.error?.details || "") || /slug/i.test(errMsg)
+
+  if (!looksLikeSlugRequired) {
+    return NextResponse.json(
+      {
+        error: "Insert failed",
+        code: "INSERT_FAILED",
+        details: isDev
+          ? { code: firstTry.error?.code, message: firstTry.error?.message, details: firstTry.error?.details }
+          : undefined,
+      },
+      { status: 500 }
+    )
+  }
+
+  // Step 5: Fallback — generate slug in app with retries on unique violation
+  const maxAttempts = 7
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const slug = randomSlug(8)
+    const attemptRes = await supabase
+      .from("links")
+      .insert({ ...basePayload, slug })
+      .select()
+      .single()
+
+    if (!attemptRes.error && attemptRes.data) {
+      return NextResponse.json({ data: attemptRes.data }, { status: 201 })
     }
 
-    // Parse request body
-    const body = await request.json()
-    const { title, dest_url, ads_required } = body
-
-    // Validate required fields
-    if (!dest_url) {
+    const code = attemptRes.error?.code
+    if (code !== "23505") {
+      // Not a unique violation — return it
       return NextResponse.json(
-        { error: 'Missing dest_url', details: 'Destination URL is required' },
-        { status: 400 }
-      )
-    }
-
-    // Validate URL format
-    try {
-      new URL(dest_url)
-    } catch {
-      return NextResponse.json(
-        { error: 'Invalid URL', details: 'Please provide a valid URL' },
-        { status: 400 }
-      )
-    }
-
-    let attempts = 0
-    const maxAttempts = 5
-
-    // Try to insert with retry on slug collision
-    while (attempts < maxAttempts) {
-      attempts++
-      const slug = generateSlug()
-
-      const payload = {
-        user_id: user.id,
-        slug,
-        dest_url,
-        title: title || null,
-        ads_required: ads_required || 3,
-        views: 0,
-        completions: 0,
-        is_active: true
-      }
-
-      const { data, error: insertError } = await supabase
-        .from('links')
-        .insert(payload)
-        .select()
-        .single()
-
-      if (!insertError) {
-        // Success!
-        return NextResponse.json({ data }, { status: 201 })
-      }
-
-      // Handle slug collision
-      if (insertError.code === '23505') {
-        // Slug collision, retry with new slug in next iteration
-        continue
-      }
-
-      // Other error - return it
-      return NextResponse.json(
-        { 
-          error: 'Database error', 
-          details: insertError.message,
-          code: insertError.code,
-          hint: insertError.hint
+        {
+          error: "Insert failed",
+          code: "INSERT_FAILED",
+          details: isDev
+            ? { code: attemptRes.error?.code, message: attemptRes.error?.message, details: attemptRes.error?.details }
+            : undefined,
         },
         { status: 500 }
       )
     }
-
-    // Failed after max attempts
-    return NextResponse.json(
-      { error: 'Failed to generate unique slug', details: 'Please try again' },
-      { status: 500 }
-    )
-
-  } catch (error: any) {
-    console.error('[API /api/links] Unexpected error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    )
+    // 23505: slug unique violation — retry
   }
+
+  return NextResponse.json(
+    { error: "Could not generate a unique slug", code: "SLUG_EXHAUSTED" },
+    { status: 500 }
+  )
 }
