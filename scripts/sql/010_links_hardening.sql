@@ -1,4 +1,7 @@
 -- Function: generate unique slug
+-- Note: There's a small race condition window between the uniqueness check and return.
+-- The unique constraint on links.slug will catch any collisions at insert time,
+-- and the application layer has retry logic to handle 23505 (unique violation) errors.
 create or replace function public.generate_unique_slug(len int default 8)
 returns text
 language plpgsql

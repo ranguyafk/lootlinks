@@ -10,6 +10,7 @@ function randomSlug(len = 8) {
 }
 
 const isDev = process.env.NODE_ENV !== "production"
+const MAX_SLUG_RETRY_ATTEMPTS = 7 // Retry up to 7 times on slug collision (36^8 = ~2.8 trillion possibilities)
 
 export async function POST(request: NextRequest) {
   // Step 1: Parse JSON body safely
@@ -86,6 +87,9 @@ export async function POST(request: NextRequest) {
   }
 
   // If the failure is clearly unrelated to slug default, return it
+  // Note: This detection logic checks for common "NOT NULL" constraint errors (23502)
+  // and slug-related keywords in the error message. While not perfect, it allows
+  // graceful fallback to app-generated slugs if the DB function isn't installed.
   const errCode = firstTry.error?.code
   const errMsg = firstTry.error?.message || ""
   const looksLikeSlugRequired =
@@ -105,8 +109,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Step 5: Fallback — generate slug in app with retries on unique violation
-  const maxAttempts = 7
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+  for (let attempt = 1; attempt <= MAX_SLUG_RETRY_ATTEMPTS; attempt++) {
     const slug = randomSlug(8)
     const attemptRes = await supabase
       .from("links")
