@@ -1,41 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
 
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { id } = await params
-    const supabase = await createClient()
+export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createClient()
+  const { id } = await params
 
-    // Fetch the link to verify it exists and get current completions count
-    const { data: link, error } = await supabase
-      .from('links')
-      .select('id, completions')
-      .eq('id', id)
-      .single()
-
-    if (error || !link) {
-      return NextResponse.json({ error: 'Link not found' }, { status: 404 })
-    }
-
-    // Increment completions count
-    const { error: updErr } = await supabase
-      .from('links')
-      .update({ completions: link.completions + 1 })
-      .eq('id', link.id)
-
-    if (updErr) {
-      return NextResponse.json(
-        { error: 'Failed to increment completion', details: updErr.message },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({ ok: true }, { status: 200 })
-  } catch (e: unknown) {
-    const error = e as Error
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    )
+  const { data, error } = await supabase.rpc("increment_link_completion", { p_link_id: id })
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
+  return NextResponse.json({ ok: true, link: data }, { status: 200 })
 }
