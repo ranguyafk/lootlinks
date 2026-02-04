@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next"
+import { ClerkProvider } from "@clerk/nextjs"
 import { Toaster } from "sonner"
 import { GlobalNav } from "@/components/navigation/global-nav"
 import "./globals.css"
@@ -18,14 +19,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className="font-sans antialiased">
-        <GlobalNav />
-        <main className="pt-16">
-          {children}
-        </main>
-        <Toaster position="top-right" richColors />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body className="font-sans antialiased">
+          <GlobalNav />
+          <main className="pt-16">
+            {children}
+          </main>
+          <Toaster position="top-right" richColors />
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }

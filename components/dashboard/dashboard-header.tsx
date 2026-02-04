@@ -1,11 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import { User } from "@supabase/supabase-js"
+import { User } from "@clerk/nextjs/server"
+import { useClerk } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Link2, Plus, LogOut, RefreshCw } from "lucide-react"
+import { Link2, Plus, LogOut } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,8 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { toast } from "sonner"
-import { reloadSchemaCache } from "@/lib/supabase/reload-schema"
 
 interface DashboardHeaderProps {
   user: User
@@ -23,28 +20,16 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ user, onCreateClick }: DashboardHeaderProps) {
   const router = useRouter()
-  const supabase = createClient()
-  const [reloadLoading, setReloadLoading] = useState(false)
+  const { signOut } = useClerk()
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    await signOut()
     router.push("/")
     router.refresh()
   }
 
-  const handleReloadSchema = async () => {
-    setReloadLoading(true)
-    const result = await reloadSchemaCache()
-    setReloadLoading(false)
-    
-    if (result.success) {
-      toast.success('Database schema cache reloaded successfully')
-    } else {
-      toast.error(`Failed to reload schema: ${result.error}`)
-    }
-  }
-
-  const userInitials = user.email?.slice(0, 2).toUpperCase() || "U"
+  const userEmail = user.emailAddresses[0]?.emailAddress ?? ""
+  const userInitials = userEmail.slice(0, 2).toUpperCase() || "U"
 
   return (
     <header className="border-b bg-background">
@@ -54,16 +39,6 @@ export function DashboardHeader({ user, onCreateClick }: DashboardHeaderProps) {
           <span className="text-xl font-bold">LootLinks</span>
         </div>
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleReloadSchema}
-            disabled={reloadLoading}
-            title="Reload database schema cache"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${reloadLoading ? 'animate-spin' : ''}`} />
-            Reload Schema
-          </Button>
           <Button onClick={onCreateClick}>
             <Plus className="h-4 w-4 mr-2" />
             Create Link
@@ -80,7 +55,7 @@ export function DashboardHeader({ user, onCreateClick }: DashboardHeaderProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem className="text-muted-foreground">
-                {user.email}
+                {userEmail}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="h-4 w-4 mr-2" />

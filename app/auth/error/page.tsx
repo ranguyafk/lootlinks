@@ -32,7 +32,7 @@ export default function AuthErrorPage() {
             <Link href="/">Go Home</Link>
           </Button>
           <Button asChild className="flex-1">
-            <Link href="/auth/login">Try Again</Link>
+            <Link href="/auth/sign-in">Try Again</Link>
           </Button>
         </CardFooter>
       </Card>

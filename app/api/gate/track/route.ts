@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/db"
 import { isLikelyBot } from "@/lib/bots"
 import { resolveCpm } from "@/lib/cpm"
 
@@ -9,7 +9,6 @@ interface TrackPayload {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
   let payload: TrackPayload
   try {
     const body = await request.json()
@@ -36,27 +35,24 @@ export async function POST(request: NextRequest) {
   const is_bot = isLikelyBot(ua)
   const cpm_usd = resolveCpm(country)
 
-  const { data, error } = await supabase
-    .from("link_events")
-    .insert({
-      link_id,
-      slug,
-      ip,
-      user_agent: ua,
-      country,
-      is_bot,
-      valid: !is_bot,
-      cpm_usd,
+  try {
+    await prisma.linkEvent.create({
+      data: {
+        linkId: link_id,
+        ip,
+        userAgent: ua,
+        country,
+        isBot: is_bot,
+        valid: !is_bot,
+        cpmUsd: cpm_usd,
+      },
     })
-    .select()
-    .single()
-
-  if (error) {
-    if (error.code === "23505") {
+    return NextResponse.json({ ok: true }, { status: 201 })
+  } catch (err: any) {
+    const msg = String(err?.message || "")
+    if (msg.includes("Unique constraint")) {
       return NextResponse.json({ ok: true, deduped: true }, { status: 200 })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: "INSERT_FAILED" }, { status: 500 })
   }
-
-  return NextResponse.json({ ok: true, event: data }, { status: 201 })
 }

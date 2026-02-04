@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { User } from "@supabase/supabase-js"
+import { User } from "@clerk/nextjs/server"
 import { DashboardHeader } from "./dashboard-header"
 import { LinksList } from "./links-list"
 import { CreateLinkDialog } from "./create-link-dialog"

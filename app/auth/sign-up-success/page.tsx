@@ -29,7 +29,7 @@ export default function SignUpSuccessPage() {
         </CardContent>
         <CardFooter>
           <Button asChild className="w-full">
-            <Link href="/auth/login">Back to Sign In</Link>
+            <Link href="/auth/sign-in">Back to Sign In</Link>
           </Button>
         </CardFooter>
       </Card>
