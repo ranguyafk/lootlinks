@@ -147,12 +147,34 @@ npm run dev          # Start development server
 npm run build        # Build for production
 npm run start        # Start production server
 npm run lint         # Run ESLint
+npm run test         # Run tests
+npm run test:watch   # Run tests in watch mode
+npm run test:coverage # Run tests with coverage
 
 # Database commands
 npm run db:generate  # Generate Prisma Client
 npm run db:migrate   # Run database migrations
 npm run db:push      # Push schema changes without migration
 npm run db:studio    # Open Prisma Studio (database GUI)
+```
+
+## 🧪 Testing
+
+The project uses [Vitest](https://vitest.dev/) for testing. Tests are colocated with the code in `__tests__` directories.
+
+Run tests:
+```bash
+npm run test
+```
+
+Watch mode for development:
+```bash
+npm run test:watch
+```
+
+Generate coverage report:
+```bash
+npm run test:coverage
 ```
 
 ## 🚢 Deployment
