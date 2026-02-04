@@ -3,11 +3,17 @@ import { createClient } from "@/lib/supabase/server"
 import { isLikelyBot } from "@/lib/bots"
 import { resolveCpm } from "@/lib/cpm"
 
+interface TrackPayload {
+  link_id: string
+  slug: string
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
-  let payload: any
+  let payload: TrackPayload
   try {
-    payload = await request.json()
+    const body = await request.json()
+    payload = body as TrackPayload
   } catch {
     return NextResponse.json({ error: "BAD_JSON" }, { status: 400 })
   }

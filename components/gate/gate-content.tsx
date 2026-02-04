@@ -37,9 +37,9 @@ export function GateContent({ link }: GateContentProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ link_id: link.id, slug: link.slug }),
         })
-      } catch (e) {
+      } catch (error) {
         // Non-blocking
-        console.warn("tracking failed", e)
+        console.warn("tracking failed", error)
       }
     }
     track()

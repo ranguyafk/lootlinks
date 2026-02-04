@@ -55,6 +55,8 @@ function randomSlug(len = 8) {
   return out
 }
 
+const MAX_SLUG_RETRY_ATTEMPTS = 7
+
 export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLinkDialogProps) {
   const [title, setTitle] = useState("")
   const [destinationUrl, setDestinationUrl] = useState("")
@@ -110,7 +112,7 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
 
       if (looksLikeSlugRequired) {
         let final
-        for (let attempt = 0; attempt < 7; attempt++) {
+        for (let attempt = 0; attempt < MAX_SLUG_RETRY_ATTEMPTS; attempt++) {
           const payloadWithSlug = { ...basePayload, slug: randomSlug(8) }
           final = await supabase.from("links").insert(payloadWithSlug).select().single()
           if (!final.error && final.data) {
