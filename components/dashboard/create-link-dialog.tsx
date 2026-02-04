@@ -16,7 +16,6 @@ import { Slider } from "@/components/ui/slider"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase/client"
 import { z } from "zod"
 
 const CreateLinkSchema = z.object({
@@ -48,22 +47,12 @@ interface CreateLinkDialogProps {
   onLinkCreated: (link: Link) => void
 }
 
-function randomSlug(len = 8) {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
-  let out = ""
-  for (let i = 0; i < len; i++) out += chars.charAt(Math.floor(Math.random() * chars.length))
-  return out
-}
-
-const MAX_SLUG_RETRY_ATTEMPTS = 7
-
 export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLinkDialogProps) {
   const [title, setTitle] = useState("")
   const [destinationUrl, setDestinationUrl] = useState("")
   const [adsRequired, setAdsRequired] = useState([3])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -83,63 +72,52 @@ export function CreateLinkDialog({ open, onOpenChange, onLinkCreated }: CreateLi
     }
     const { title: validTitle, dest_url, ads_required } = parsed.data
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
-      setError(authError?.message || "You must be logged in to create links")
-      setLoading(false)
-      return
-    }
+    try {
+      const response = await fetch("/api/links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: validTitle,
+          dest_url,
+          ads_required,
+        }),
+      })
 
-    const basePayload = {
-      user_id: user.id,
-      dest_url,
-      title: validTitle,
-      ads_required,
-    }
-
-    let insert = await supabase.from("links").insert(basePayload).select().single()
-
-    if (insert.error) {
-      const errCode = insert.error.code
-      const errMsg = insert.error.message || ""
-      const looksLikeSlugRequired =
-        errCode === "23502" ||
-        /slug.*null|missing.*slug/i.test(insert.error.details || "") ||
-        /slug/i.test(errMsg)
-
-      if (looksLikeSlugRequired) {
-        let final
-        for (let attempt = 0; attempt < MAX_SLUG_RETRY_ATTEMPTS; attempt++) {
-          const payloadWithSlug = { ...basePayload, slug: randomSlug(8) }
-          final = await supabase.from("links").insert(payloadWithSlug).select().single()
-          if (!final.error && final.data) {
-            insert = final
-            break
-          }
-          if (final?.error?.code !== "23505") {
-            break
-          }
-        }
+      if (!response.ok) {
+        const errorData = await response.json()
+        setError(errorData.error || "Failed to create link")
+        setLoading(false)
+        return
       }
-    }
 
-    if (insert.error || !insert.data) {
-      setError(insert.error?.message || "Failed to create link")
+      const result = await response.json()
+      const link = result.data
+
+      // Transform Prisma response to match component interface
+      const transformedLink: Link = {
+        id: link.id,
+        slug: link.slug,
+        dest_url: link.destUrl,
+        title: link.title,
+        ads_required: link.adsRequired,
+        views: link.views,
+        completions: link.completions,
+        is_active: link.isActive,
+        created_at: link.createdAt,
+      }
+
+      toast.success("Link created successfully!")
+      onLinkCreated(transformedLink)
+
+      setTitle("")
+      setDestinationUrl("")
+      setAdsRequired([3])
       setLoading(false)
-      return
+      onOpenChange(false)
+    } catch (err) {
+      setError("Failed to create link")
+      setLoading(false)
     }
-
-    toast.success("Link created successfully!")
-    onLinkCreated(insert.data as Link)
-
-    setTitle("")
-    setDestinationUrl("")
-    setAdsRequired([3])
-    setLoading(false)
-    onOpenChange(false)
   }
 
   return (

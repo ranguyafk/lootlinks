@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -29,7 +28,6 @@ interface LinksListProps {
 
 export function LinksList({ links, onDelete, onToggle }: LinksListProps) {
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({})
-  const supabase = createClient()
 
   const handleCopyLink = (slug: string) => {
     const url = `${window.location.origin}/l/${slug}`
@@ -39,36 +37,45 @@ export function LinksList({ links, onDelete, onToggle }: LinksListProps) {
 
   const handleToggle = async (link: Link) => {
     setLoadingStates((prev) => ({ ...prev, [link.id]: true }))
-    
-    const { error } = await supabase
-      .from("links")
-      .update({ is_active: !link.is_active })
-      .eq("id", link.id)
 
-    if (error) {
+    try {
+      const response = await fetch(`/api/links/${link.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !link.is_active }),
+      })
+
+      if (!response.ok) {
+        toast.error("Failed to update link")
+      } else {
+        onToggle(link.id, !link.is_active)
+        toast.success(link.is_active ? "Link deactivated" : "Link activated")
+      }
+    } catch (error) {
       toast.error("Failed to update link")
-    } else {
-      onToggle(link.id, !link.is_active)
-      toast.success(link.is_active ? "Link deactivated" : "Link activated")
     }
-    
+
     setLoadingStates((prev) => ({ ...prev, [link.id]: false }))
   }
 
   const handleDelete = async (id: string) => {
     setLoadingStates((prev) => ({ ...prev, [id]: true }))
-    
-    const { error } = await supabase
-      .from("links")
-      .delete()
-      .eq("id", id)
 
-    if (error) {
+    try {
+      const response = await fetch(`/api/links/${id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        toast.error("Failed to delete link")
+        setLoadingStates((prev) => ({ ...prev, [id]: false }))
+      } else {
+        onDelete(id)
+        toast.success("Link deleted")
+      }
+    } catch (error) {
       toast.error("Failed to delete link")
       setLoadingStates((prev) => ({ ...prev, [id]: false }))
-    } else {
-      onDelete(id)
-      toast.success("Link deleted")
     }
   }
 

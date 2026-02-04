@@ -18,6 +18,9 @@ package-lock.json
 *.sqlite
 *.sqlite3
 
+# Prisma
+prisma/migrations/
+
 # Logs
 logs/
 *.log
