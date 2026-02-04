@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Link2, ExternalLink, CheckCircle, Play, Loader2 } from "lucide-react"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { CheckCircle, ExternalLink, Link2, Loader2 } from "lucide-react"
 
 interface Link {
   id: string
@@ -12,9 +12,6 @@ interface Link {
   dest_url: string
   title: string | null
   ads_required: number
-  views: number
-  completions: number
-  is_active: boolean
 }
 
 interface GateContentProps {
@@ -27,19 +24,37 @@ export function GateContent({ link }: GateContentProps) {
   const [countdown, setCountdown] = useState(0)
   const [unlocked, setUnlocked] = useState(false)
   const [redirecting, setRedirecting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const progress = (adsWatched / link.ads_required) * 100
+  const progress = Math.min(100, Math.round((adsWatched / link.ads_required) * 100))
+
+  // Track click on mount
+  useEffect(() => {
+    const track = async () => {
+      try {
+        await fetch(`/api/gate/track`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ link_id: link.id, slug: link.slug }),
+        })
+      } catch (e) {
+        // Non-blocking
+        console.warn("tracking failed", e)
+      }
+    }
+    track()
+  }, [link.id, link.slug])
 
   const handleComplete = useCallback(async () => {
     setUnlocked(true)
-    // Increment completion count via server endpoint
     try {
-      const response = await fetch(`/api/links/${link.id}/increment-completion`, { method: 'POST' })
+      const response = await fetch(`/api/links/${link.id}/increment-completion`, { method: "POST" })
       if (!response.ok) {
-        console.error('Failed to increment completion:', await response.text())
+        const msg = await response.text()
+        console.error("Failed to increment completion:", msg)
       }
-    } catch (error) {
-      console.error('Error incrementing completion:', error)
+    } catch (err) {
+      console.error("Error incrementing completion:", err)
     }
   }, [link.id])
 
@@ -50,13 +65,14 @@ export function GateContent({ link }: GateContentProps) {
   }, [adsWatched, link.ads_required, unlocked, handleComplete])
 
   const watchAd = () => {
+    setError(null)
     setCurrentlyWatching(true)
-    setCountdown(5) // 5 second simulated ad
+    setCountdown(5)
   }
 
   useEffect(() => {
     if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
+      const timer = setTimeout(() => setCountdown((c) => c - 1), 1000)
       return () => clearTimeout(timer)
     } else if (currentlyWatching && countdown === 0) {
       setCurrentlyWatching(false)
@@ -87,7 +103,7 @@ export function GateContent({ link }: GateContentProps) {
             </div>
             <CardTitle className="text-2xl">Link Unlocked!</CardTitle>
             <CardDescription>
-              You&apos;ve completed all required ads. Click below to access your content.
+              You&apos;ve completed all required tasks. Click below to access your content.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -109,56 +125,38 @@ export function GateContent({ link }: GateContentProps) {
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="flex items-center gap-2 text-primary">
-              <Link2 className="h-6 w-6" />
-              <span className="text-xl font-bold">LootLinks</span>
-            </div>
-          </div>
-          <CardTitle className="text-xl">
-            {link.title || "Access Content"}
-          </CardTitle>
+          <CardTitle className="text-2xl">Complete Tasks to Unlock</CardTitle>
           <CardDescription>
-            Watch {link.ads_required} ad{link.ads_required > 1 ? "s" : ""} to unlock this link
+            Watch ads or complete tasks to access the destination link.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Progress</span>
-              <span className="font-medium">{adsWatched} / {link.ads_required}</span>
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <div className="mb-4">
+            <div className="w-full bg-muted rounded h-2 overflow-hidden">
+              <div className="bg-primary h-2 transition-all" style={{ width: `${progress}%` }} />
             </div>
-            <Progress value={progress} className="h-2" />
+            <p className="text-sm text-muted-foreground mt-2">
+              {adsWatched} / {link.ads_required} tasks completed
+            </p>
           </div>
 
-          {currentlyWatching ? (
-            <div className="rounded-lg bg-muted p-8 text-center">
-              <div className="mb-4">
-                <div className="inline-flex items-center justify-center rounded-full bg-primary/10 p-4">
-                  <Play className="h-8 w-8 text-primary" />
-                </div>
-              </div>
-              <p className="text-lg font-semibold mb-2">Watching Ad...</p>
-              <p className="text-3xl font-bold text-primary">{countdown}s</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Please wait for the ad to complete
-              </p>
-            </div>
-          ) : (
-            <Button
-              onClick={watchAd}
-              className="w-full"
-              size="lg"
-              disabled={adsWatched >= link.ads_required}
-            >
-              <Play className="mr-2 h-4 w-4" />
-              Watch Ad {adsWatched + 1} of {link.ads_required}
+          <div className="space-y-4">
+            <Button onClick={watchAd} disabled={currentlyWatching} className="w-full">
+              {currentlyWatching ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Watching... {countdown}s left
+                </>
+              ) : (
+                "Watch Ad (5s)"
+              )}
             </Button>
-          )}
-
-          <p className="text-xs text-center text-muted-foreground">
-            By watching these ads, you help support the content creator.
-          </p>
+          </div>
         </CardContent>
       </Card>
     </div>
